@@ -1,0 +1,2 @@
+2|X2 Filter Wheels|Xagyl filter wheels|Xagyl| |libXagylFilterWheel||1|1|0|
+
