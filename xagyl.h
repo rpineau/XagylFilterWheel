@@ -9,6 +9,14 @@
 #ifndef xagyl_h
 #define xagyl_h
 #include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <memory.h>
+#ifdef SB_MAC_BUILD
+#include <unistd.h>
+#endif
+
 #include "../../licensedinterfaces/sberrorx.h"
 #include "../../licensedinterfaces/serxinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"

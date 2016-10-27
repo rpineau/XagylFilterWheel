@@ -6,17 +6,7 @@
 //  Copyright © 2016 RTI-Zone. All rights reserved.
 //
 
-#include <stdio.h>
-
-
 #include "xagyl.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <memory.h>
-#ifdef SB_MAC_BUILD
-#include <unistd.h>
-#endif
 
 CXagyl::CXagyl()
 {

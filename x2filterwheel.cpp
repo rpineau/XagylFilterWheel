@@ -1,17 +1,4 @@
-#include <string.h>
-#include <stdio.h>
 #include "x2filterwheel.h"
-#include "../../licensedinterfaces/sberrorx.h"
-#include "../../licensedinterfaces/basicstringinterface.h"
-#include "../../licensedinterfaces/serxinterface.h"
-#include "../../licensedinterfaces/basiciniutilinterface.h"
-#include "../../licensedinterfaces/theskyxfacadefordriversinterface.h"
-#include "../../licensedinterfaces/sleeperinterface.h"
-#include "../../licensedinterfaces/loggerinterface.h"
-#include "../../licensedinterfaces/basiciniutilinterface.h"
-#include "../../licensedinterfaces/mutexinterface.h"
-#include "../../licensedinterfaces/tickcountinterface.h"
-
 
 
 X2FilterWheel::X2FilterWheel(const char* pszDriverSelection,
