@@ -119,19 +119,34 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 
 int	X2FilterWheel::establishLink(void)
 {
-    X2MutexLocker ml(GetMutex());
+    int err;
+    char szPort[DRIVER_MAX_STRING];
 
-    return ERR_NOT_IMPL;
+    X2MutexLocker ml(GetMutex());
+    // get serial port device name
+    portNameOnToCharPtr(szPort,DRIVER_MAX_STRING);
+    err = Xagyl.Connect(szPort);
+    if(err)
+        m_bLinked = false;
+    else
+        m_bLinked = true;
+
+    return err;
 }
+
 int	X2FilterWheel::terminateLink(void)
 {
     X2MutexLocker ml(GetMutex());
-    return ERR_NOT_IMPL;
+    Xagyl.Disconnect();
+    m_bLinked = false;
+    return SB_OK;
 }
+
 bool X2FilterWheel::isLinked(void) const
 {
-    return false;
+    return m_bLinked;
 }
+
 bool X2FilterWheel::isEstablishLinkAbortable(void) const	{
 
     return false;
@@ -145,7 +160,8 @@ void	X2FilterWheel::driverInfoDetailedInfo(BasicStringInterface& str) const
 {
 	str = "X2 Xagyl Filter Wheel Plug In";
 }
-double	X2FilterWheel::driverInfoVersion(void) const				
+
+double	X2FilterWheel::driverInfoVersion(void) const
 {
 	return 1.0;
 }
@@ -154,21 +170,25 @@ void X2FilterWheel::deviceInfoNameShort(BasicStringInterface& str) const
 {
 	str = "X2 Xagyl Filter Wheel";
 }
-void X2FilterWheel::deviceInfoNameLong(BasicStringInterface& str) const				
+
+void X2FilterWheel::deviceInfoNameLong(BasicStringInterface& str) const
 {
 	str = "X2 Xagyl Filter Wheel Plug In";
 
 }
-void X2FilterWheel::deviceInfoDetailedDescription(BasicStringInterface& str) const	
+
+void X2FilterWheel::deviceInfoDetailedDescription(BasicStringInterface& str) const
 {
 	str = "X2 Xagyl Filter Wheel Plug In by Rodolphe Pinea";
 	
 }
-void X2FilterWheel::deviceInfoFirmwareVersion(BasicStringInterface& str)		
+
+void X2FilterWheel::deviceInfoFirmwareVersion(BasicStringInterface& str)
 {
     if(m_bLinked) {
+        X2MutexLocker ml(GetMutex());
         char cFirmware[SERIAL_BUFFER_SIZE];
-        // nexDome.getFirmwareVersion(cFirmware, SERIAL_BUFFER_SIZE);
+        Xagyl.getFirmwareVersion(cFirmware, SERIAL_BUFFER_SIZE);
         str = cFirmware;
 
     }
@@ -177,36 +197,66 @@ void X2FilterWheel::deviceInfoFirmwareVersion(BasicStringInterface& str)
 }
 void X2FilterWheel::deviceInfoModel(BasicStringInterface& str)				
 {
-	str = DISPLAY_NAME;
+    if(m_bLinked) {
+        X2MutexLocker ml(GetMutex());
+        char cModel[SERIAL_BUFFER_SIZE];
+        Xagyl.getModel(cModel, SERIAL_BUFFER_SIZE);
+        str = cModel;
+
+    }
+    else
+        str = "N/A";
 }
 
 #pragma mark - FilterWheelMoveToInterface
+
 int	X2FilterWheel::filterCount(int& nCount)
 {
-	X2MutexLocker ml(GetMutex());
-	return ERR_NOT_IMPL;
+    int err = SB_OK;
+    nCount = 0;
+    if(m_bLinked) {
+        X2MutexLocker ml(GetMutex());
+        err = Xagyl.getFilterCount(nCount);
+    }
+    return err;
 }
+
 int	X2FilterWheel::defaultFilterName(const int& nIndex, BasicStringInterface& strFilterNameOut)
 {
 	X2MutexLocker ml(GetMutex());
 	return ERR_NOT_IMPL;
 }
+
 int	X2FilterWheel::startFilterWheelMoveTo(const int& nTargetPosition)
 {
-	X2MutexLocker ml(GetMutex());
-	return ERR_NOT_IMPL;
+    int err = SB_OK;
+   if(m_bLinked) {
+        X2MutexLocker ml(GetMutex());
+        err = Xagyl.moveToFilterIndex(nTargetPosition);
+    }
+    return err;
 }
+
 int	X2FilterWheel::isCompleteFilterWheelMoveTo(bool& bComplete) const
 {
-	X2FilterWheel* pMe = (X2FilterWheel*)this;
-	X2MutexLocker ml(pMe->GetMutex());
-	return ERR_NOT_IMPL;
+    int err = SB_OK;
+
+    if(m_bLinked) {
+        X2FilterWheel* pMe = (X2FilterWheel*)this;
+        X2MutexLocker ml(pMe->GetMutex());
+        err = pMe->Xagyl.isMoveToComplete(bComplete);
+        if(err)
+            return ERR_CMDFAILED;
+    }
+        return SB_OK;
 }
+
 int	X2FilterWheel::endFilterWheelMoveTo(void)
 {
 	X2MutexLocker ml(GetMutex());
 	return ERR_NOT_IMPL;
 }
+
 int	X2FilterWheel::abortFilterWheelMoveTo(void)
 {
 	X2MutexLocker ml(GetMutex());

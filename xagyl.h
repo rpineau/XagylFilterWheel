@@ -23,7 +23,9 @@
 
 #define SERIAL_BUFFER_SIZE 20
 #define MAX_TIMEOUT 5000
-#define XAGYL_LOG_BUFFER_SIZE 256
+#define LOG_BUFFER_SIZE 256
+
+enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
 
 class CXagyl
 {
@@ -31,13 +33,26 @@ public:
     CXagyl();
     ~CXagyl();
 
-    int        Connect(const char *szPort);
-    void        Disconnect(void);
-    bool        IsConnected(void) { return bIsConnected; }
+    int             Connect(const char *szPort);
+    void            Disconnect(void);
+    bool            IsConnected(void) { return bIsConnected; }
 
-    void        SetSerxPointer(SerXInterface *p) { pSerx = p; }
-    void        setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
+    void            SetSerxPointer(SerXInterface *p) { pSerx = p; }
+    void            setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
 
+    // filter wheel communication
+    int             filterWheelCommand(const char *cmd, char *result, char respCmdCode, int resultMaxLen);
+    int             readResponse(char *respBuffer, int bufferLen);
+
+    // Filter Wheel commands
+    int             getFirmwareVersion(char *version, int strMaxLen);
+    int             getModel(char *model, int strMaxLen);
+    int             getFilterCount(int &nCount);
+
+    int             moveToFilterIndex(int nTargetPosition);
+    int             isMoveToComplete(bool &complete);
+
+    
 protected:
     SerXInterface   *pSerx;
     LoggerInterface *mLogger;
@@ -46,7 +61,10 @@ protected:
     bool            bDebugLog;
 
     char            firmwareVersion[SERIAL_BUFFER_SIZE];
-    char            mLogBuffer[XAGYL_LOG_BUFFER_SIZE];
+    char            mLogBuffer[LOG_BUFFER_SIZE];
+
+    bool            bCalibrating;
+    int             mTargetFilterIndex;
 
 };
 #endif /* xagyl_h */
