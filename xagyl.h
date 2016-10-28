@@ -21,7 +21,7 @@
 #include "../../licensedinterfaces/serxinterface.h"
 #include "../../licensedinterfaces/loggerinterface.h"
 
-#define SERIAL_BUFFER_SIZE 20
+#define SERIAL_BUFFER_SIZE 32
 #define MAX_TIMEOUT 5000
 #define LOG_BUFFER_SIZE 256
 
@@ -41,7 +41,7 @@ public:
     void            setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
 
     // filter wheel communication
-    int             filterWheelCommand(const char *cmd, char *result, char respCmdCode, int resultMaxLen);
+    int             filterWheelCommand(const char *cmd, char *result, int resultMaxLen);
     int             readResponse(char *respBuffer, int bufferLen);
 
     // Filter Wheel commands

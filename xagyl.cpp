@@ -42,7 +42,6 @@ int CXagyl::Connect(const char *szPort)
         mLogger->out(mLogBuffer);
     }
     // if this fails we're not properly connected.
-    /*
     err = getFirmwareVersion(firmwareVersion, SERIAL_BUFFER_SIZE);
     if(err) {
         if (bDebugLog) {
@@ -58,7 +57,6 @@ int CXagyl::Connect(const char *szPort)
         snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CNexDome::Connect] Got Firmware.\n");
         mLogger->out(mLogBuffer);
     }
-    */
     return SB_OK;
 }
 
@@ -113,14 +111,14 @@ int CXagyl::readResponse(char *respBuffer, int bufferLen)
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] nBytesRead = %lu\n",nBytesRead);
             mLogger->out(mLogBuffer);
         }
-    } while (*bufPtr++ != '\n' && totalBytesRead < bufferLen );
+    } while (*bufPtr++ != 0xA && totalBytesRead < bufferLen );
 
-    *bufPtr = 0; //remove the \n
+    *bufPtr = 0; //remove the 0xA
     return err;
 }
 
 
-int CXagyl::filterWheelCommand(const char *cmd, char *result, char respCmdCode, int resultMaxLen)
+int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
 {
     int err = 0;
     char resp[SERIAL_BUFFER_SIZE];
@@ -134,21 +132,20 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, char respCmdCode, 
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     if(err)
         return err;
-    // read response
-    if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::domeCommand] Getting response.\n");
-        mLogger->out(mLogBuffer);
+
+    if(result) {
+        // read response
+        if (bDebugLog) {
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::domeCommand] Getting response.\n");
+            mLogger->out(mLogBuffer);
+        }
+        err = readResponse(resp, SERIAL_BUFFER_SIZE);
+        if(err)
+            return err;
+
+        if(result)
+            strncpy(result, &resp[1], resultMaxLen);
     }
-    err = readResponse(resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-
-    if(resp[0] != respCmdCode)
-        err = XA_BAD_CMD_RESPONSE;
-
-    if(result)
-        strncpy(result, &resp[1], resultMaxLen);
-    
     return err;
     
 }
@@ -166,7 +163,7 @@ int CXagyl::getFirmwareVersion(char *version, int strMaxLen)
     if(bCalibrating)
         return SB_OK;
 
-    // err = filterWheelCommand("I1", resp, 'V', SERIAL_BUFFER_SIZE);
+    err = filterWheelCommand("I1", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
 
@@ -185,7 +182,7 @@ int CXagyl::getModel(char *model, int strMaxLen)
     if(bCalibrating)
         return SB_OK;
 
-    // err = filterWheelCommand("I0", resp, 'V', SERIAL_BUFFER_SIZE);
+    err = filterWheelCommand("I0", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
 
@@ -196,11 +193,11 @@ int CXagyl::getModel(char *model, int strMaxLen)
 int CXagyl::getFilterCount(int &count)
 {
     int err = 0;
+    char resp[SERIAL_BUFFER_SIZE];
     count = 0;
-    // err = filterWheelCommand("I8", resp, 'V', SERIAL_BUFFER_SIZE);
+    err = filterWheelCommand("I8", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
-
     return err;
 }
 
@@ -210,8 +207,8 @@ int CXagyl::getFilterCount(int &count)
 int CXagyl::moveToFilterIndex(int nTargetPosition)
 {
     int err = 0;
-
-    // err = filterWheelCommand("Gx", resp, 'V', SERIAL_BUFFER_SIZE);
+    
+    err = filterWheelCommand("Gx", NULL, 0);
     if(err)
         return err;
     mTargetFilterIndex = nTargetPosition;
@@ -222,10 +219,22 @@ int CXagyl::moveToFilterIndex(int nTargetPosition)
 int CXagyl::isMoveToComplete(bool &complete)
 {
     int err = 0;
-    // err = filterWheelCommand("I2", resp, 'V', SERIAL_BUFFER_SIZE);
+    int filterIndex;
+    char resp[SERIAL_BUFFER_SIZE];
+    
+    complete = false;
+    
+    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
     // check mTargetFilterIndex against current filter wheel position.
+    err = sscanf(resp, "P%d", &filterIndex);
+    if(err)
+        return err;
+    
+    if(filterIndex == mTargetFilterIndex)
+        complete = true;
+
     return err;
 }
 
