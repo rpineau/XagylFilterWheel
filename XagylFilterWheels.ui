@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>311</width>
-    <height>592</height>
+    <width>313</width>
+    <height>623</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -291,6 +291,16 @@
          <string>Filter slots settings</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Filter Slot :</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="3">
           <spacer name="horizontalSpacer_10">
            <property name="orientation">
@@ -304,15 +314,31 @@
            </property>
           </spacer>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label">
+         <item row="2" column="3">
+          <spacer name="horizontalSpacer_11">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_13">
            <property name="text">
-            <string>Filter Slot :</string>
+            <string>Position Threshold :</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
            </property>
           </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="spinBox_5"/>
          </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="comboBox"/>
@@ -350,31 +376,15 @@
            </property>
           </spacer>
          </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_13">
+         <item row="3" column="0" colspan="2">
+          <widget class="QLabel" name="label_14">
            <property name="text">
-            <string>Position Threshold :</string>
+            <string>Sensors XX YY</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="spinBox_5"/>
-         </item>
-         <item row="2" column="3">
-          <spacer name="horizontalSpacer_11">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </widget>

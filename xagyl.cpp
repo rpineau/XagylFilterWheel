@@ -14,6 +14,7 @@ CXagyl::CXagyl()
     bCalibrating = false;
     bDebugLog = false;
     mTargetFilterIndex = 0;
+    nNbSlot = 0;
 }
 
 CXagyl::~CXagyl()
@@ -23,8 +24,7 @@ CXagyl::~CXagyl()
 
 int CXagyl::Connect(const char *szPort)
 {
-    int err;
-
+    int err = SB_OK;
     // 9600 8N1
     if(pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
         bIsConnected = true;
@@ -45,7 +45,7 @@ int CXagyl::Connect(const char *szPort)
     err = getFirmwareVersion(firmwareVersion, SERIAL_BUFFER_SIZE);
     if(err) {
         if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CNexDome::Connect] Error Getting Firmware.\n");
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting Firmware.\n");
             mLogger->out(mLogBuffer);
         }
         bIsConnected = false;
@@ -54,10 +54,25 @@ int CXagyl::Connect(const char *szPort)
     }
 
     if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CNexDome::Connect] Got Firmware.\n");
+        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got Firmware.\n");
         mLogger->out(mLogBuffer);
     }
-    return SB_OK;
+
+    // get the number of slots
+    err = getNumbersOfSlots(nNbSlot);
+    if(err) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the number of available slots.\n");
+            mLogger->out(mLogBuffer);
+        }
+        bIsConnected = false;
+        pSerx->close();
+        return ERR_CMDFAILED;
+    }
+    
+    filters = new filter_params[nNbSlot];
+    getFiltersPraramsFromDevice();
+    return err;
 }
 
 
@@ -241,5 +256,44 @@ int CXagyl::isMoveToComplete(bool &complete)
 #pragma mark - Filter Wheel config commands
 
 // increasePulseWidth
+
+#pragma mark - filter params functions
+
+int CXagyl::getNumbersOfSlots(int &nbSlots)
+{
+    int err = 0;
+    
+    return err;
+}
+
+int CXagyl::getFilterPrams(int index, filter_params &params)
+{
+    int err = 0;
+    
+    return err;
+}
+
+int CXagyl::getFiltersPraramsFromDevice()
+{
+    int err = 0;
+    int i = 0;
+    
+    for(i = 0; i < nNbSlot; i++){
+        
+    }
+
+    return err;
+}
+
+int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
+{
+    int err = 0;
+    
+    return err;
+}
+
+
+
+
 
 

@@ -24,8 +24,14 @@
 #define SERIAL_BUFFER_SIZE 32
 #define MAX_TIMEOUT 5000
 #define LOG_BUFFER_SIZE 256
+#define MAX_NB_SLOTS 7
 
 enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
+
+typedef struct {
+    int offset;
+    int threshold;
+} filter_params;
 
 class CXagyl
 {
@@ -52,6 +58,8 @@ public:
     int             moveToFilterIndex(int nTargetPosition);
     int             isMoveToComplete(bool &complete);
 
+    int             getNumbersOfSlots(int &nbSlots);
+    int             getFilterPrams(int index, filter_params &params);
     
 protected:
     SerXInterface   *pSerx;
@@ -66,5 +74,10 @@ protected:
     bool            bCalibrating;
     int             mTargetFilterIndex;
 
+    filter_params   *filters;
+    int             nNbSlot;
+    int             getFiltersPraramsFromDevice();
+    int             setFilterParamsOnDevice(int fiterIndex, int offset, int threshold);
+    
 };
 #endif /* xagyl_h */
