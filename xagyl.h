@@ -33,6 +33,11 @@ typedef struct {
     int threshold;
 } filter_params;
 
+typedef struct {
+    int pulseWidth;
+    int jitter;
+} wheel_params;
+
 class CXagyl
 {
 public:
@@ -59,7 +64,7 @@ public:
     int             isMoveToComplete(bool &complete);
 
     int             getNumbersOfSlots(int &nbSlots);
-    int             getFilterPrams(int index, filter_params &params);
+    int             getFilterParams(int index, filter_params &params);
     
 protected:
     SerXInterface   *pSerx;
@@ -74,9 +79,12 @@ protected:
     bool            bCalibrating;
     int             mTargetFilterIndex;
 
-    filter_params   *filters;
-    int             nNbSlot;
-    int             getFiltersPraramsFromDevice();
+    filter_params   *mFilterParams;
+    wheel_params    mWheelParams;
+    
+    int             mNbSlot;
+    int             getGlobalPraramsFromDevice(wheel_params &wheelParams);
+    int             getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots);
     int             setFilterParamsOnDevice(int fiterIndex, int offset, int threshold);
     
 };

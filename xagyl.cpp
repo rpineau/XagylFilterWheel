@@ -14,7 +14,7 @@ CXagyl::CXagyl()
     bCalibrating = false;
     bDebugLog = false;
     mTargetFilterIndex = 0;
-    nNbSlot = 0;
+    mNbSlot = 0;
 }
 
 CXagyl::~CXagyl()
@@ -59,7 +59,7 @@ int CXagyl::Connect(const char *szPort)
     }
 
     // get the number of slots
-    err = getNumbersOfSlots(nNbSlot);
+    err = getNumbersOfSlots(mNbSlot);
     if(err) {
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the number of available slots.\n");
@@ -70,8 +70,9 @@ int CXagyl::Connect(const char *szPort)
         return ERR_CMDFAILED;
     }
     
-    filters = new filter_params[nNbSlot];
-    getFiltersPraramsFromDevice();
+    err = getGlobalPraramsFromDevice(mWheelParams);
+    mFilterParams = new filter_params[mNbSlot];
+    err = getFiltersPraramsFromDevice(mFilterParams, mNbSlot);
     return err;
 }
 
@@ -257,7 +258,7 @@ int CXagyl::isMoveToComplete(bool &complete)
 
 // increasePulseWidth
 
-#pragma mark - filter params functions
+#pragma mark - filters and device params functions
 
 int CXagyl::getNumbersOfSlots(int &nbSlots)
 {
@@ -266,20 +267,21 @@ int CXagyl::getNumbersOfSlots(int &nbSlots)
     return err;
 }
 
-int CXagyl::getFilterPrams(int index, filter_params &params)
+int CXagyl::getFilterParams(int index, filter_params &params)
 {
     int err = 0;
     
     return err;
 }
 
-int CXagyl::getFiltersPraramsFromDevice()
+int CXagyl::getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots)
 {
     int err = 0;
     int i = 0;
     
-    for(i = 0; i < nNbSlot; i++){
-        
+    for(i = 0; i < nbSlots; i++){
+        filterParams[i].offset = 0;
+        filterParams[i].threshold = 0;
     }
 
     return err;
@@ -292,7 +294,12 @@ int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
     return err;
 }
 
-
+int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
+{
+    int err = SB_OK;
+    
+    return err;
+}
 
 
 
