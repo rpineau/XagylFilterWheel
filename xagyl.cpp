@@ -41,7 +41,9 @@ int CXagyl::Connect(const char *szPort)
         snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Getting Firmware.\n");
         mLogger->out(mLogBuffer);
     }
-    // if this fails we're not properly connected.
+
+    // if any of this fails we're not properly connected or there is a hardware issue.
+    
     err = getFirmwareVersion(firmwareVersion, SERIAL_BUFFER_SIZE);
     if(err) {
         if (bDebugLog) {
@@ -70,9 +72,29 @@ int CXagyl::Connect(const char *szPort)
         return ERR_CMDFAILED;
     }
     
+    // get jitter and pulse width
     err = getGlobalPraramsFromDevice(mWheelParams);
+    if(err) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the jitter and pulse width values.\n");
+            mLogger->out(mLogBuffer);
+        }
+        bIsConnected = false;
+        pSerx->close();
+        return ERR_CMDFAILED;
+    }
+
     mFilterParams = new filter_params[mNbSlot];
     err = getFiltersPraramsFromDevice(mFilterParams, mNbSlot);
+    if(err) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the filters parameters.\n");
+            mLogger->out(mLogBuffer);
+        }
+        bIsConnected = false;
+        pSerx->close();
+        return ERR_CMDFAILED;
+    }
     return err;
 }
 
