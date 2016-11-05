@@ -79,6 +79,7 @@ int X2FilterWheel::execModalSettingsDialog()
     X2GUIInterface*					ui = uiutil.X2UI();
     X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
     bool bPressedOK = false;
+    char tmpBuf[SERIAL_BUFFER_SIZE];
 
     if (NULL == ui)
         return ERR_POINTER;
@@ -90,15 +91,56 @@ int X2FilterWheel::execModalSettingsDialog()
         return ERR_POINTER;
 
     //Intialize the user interface
+    if(m_bLinked) {
+        Xagyl.getModel(tmpBuf,16);
+        dx->setPropertyString("model","text", tmpBuf);
+        Xagyl.getFirmwareVersion(tmpBuf,16);
+        dx->setPropertyString("firmware","text", tmpBuf);
+        Xagyl.getSerialnumber(tmpBuf,16);
+        dx->setPropertyString("serialNumber","text", tmpBuf);
 
-    //Populate the combo box and set the current index (selection)
-    Xagyl.getNumbersOfSlots(nbSlots);
-    for (i=0; i< nbSlots; i++){
-        snprintf(comboString, 16, "%d", i);
-        dx->comboBoxAppendString("comboBox", comboString);
+        dx->setEnabled("pushButton",true);
+        dx->setEnabled("pulseWidth",true);
+        dx->setEnabled("rotationSpeed",true);
+        dx->setEnabled("jitter",true);
+        
+        dx->setEnabled("comboBox",true);
+        dx->setEnabled("positionOffset",true);
+        dx->setEnabled("positionThreshold",true);
+
+
+        //Populate the combo box and set the current index (selection)
+        Xagyl.getNumbersOfSlots(nbSlots);
+        printf("Got %d slot from Xagyl.getNumbersOfSlots\n", nbSlots);
+        for (i=0; i< nbSlots; i++){
+            snprintf(comboString, 16, "Slot %d", i);
+            printf("Adding %s to combo\n", comboString);
+            dx->comboBoxAppendString("comboBox", comboString);
+            
+        }
+        dx->setCurrentIndex("comboBox",0);
+        dx->setEnabled("positionOffset",true);
+        dx->setEnabled("positionThreshold",true);
+
+        
+        snprintf(tmpBuf,16,"-- --");
+        dx->setPropertyString("sensorValues","text", tmpBuf);
 
     }
-    dx->setCurrentIndex("comboBox",0);
+    else {
+        snprintf(tmpBuf,16,"NA");
+        dx->setPropertyString("model","text", tmpBuf);
+        dx->setPropertyString("firmware","text", tmpBuf);
+        dx->setPropertyString("serialNumber","text", tmpBuf);
+        dx->setEnabled("pushButton",false);
+        dx->setEnabled("pulseWidth",false);
+        dx->setEnabled("rotationSpeed",false);
+        dx->setEnabled("jitter",false);
+        dx->setEnabled("comboBox",false);
+        dx->setEnabled("positionOffset",false);
+        dx->setEnabled("positionThreshold",false);
+        dx->setPropertyString("sensorValues","text", tmpBuf);
+    }
 
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))
@@ -150,6 +192,8 @@ int	X2FilterWheel::terminateLink(void)
 
 bool X2FilterWheel::isLinked(void) const
 {
+    X2FilterWheel* pMe = (X2FilterWheel*)this;
+    X2MutexLocker ml(pMe->GetMutex());
     return m_bLinked;
 }
 
@@ -196,7 +240,6 @@ void X2FilterWheel::deviceInfoFirmwareVersion(BasicStringInterface& str)
         char cFirmware[SERIAL_BUFFER_SIZE];
         Xagyl.getFirmwareVersion(cFirmware, SERIAL_BUFFER_SIZE);
         str = cFirmware;
-
     }
     else
         str = "N/A";
@@ -208,7 +251,6 @@ void X2FilterWheel::deviceInfoModel(BasicStringInterface& str)
         char cModel[SERIAL_BUFFER_SIZE];
         Xagyl.getModel(cModel, SERIAL_BUFFER_SIZE);
         str = cModel;
-
     }
     else
         str = "N/A";
@@ -219,10 +261,10 @@ void X2FilterWheel::deviceInfoModel(BasicStringInterface& str)
 int	X2FilterWheel::filterCount(int& nCount)
 {
     int err = SB_OK;
-    nCount = 0;
-    if(m_bLinked) {
-        X2MutexLocker ml(GetMutex());
-        err = Xagyl.getFilterCount(nCount);
+    X2MutexLocker ml(GetMutex());
+    err = Xagyl.getFilterCount(nCount);
+    if(err) {
+        err = ERR_CMDFAILED;
     }
     return err;
 }
@@ -236,9 +278,13 @@ int	X2FilterWheel::defaultFilterName(const int& nIndex, BasicStringInterface& st
 int	X2FilterWheel::startFilterWheelMoveTo(const int& nTargetPosition)
 {
     int err = SB_OK;
-   if(m_bLinked) {
+    
+    if(m_bLinked) {
         X2MutexLocker ml(GetMutex());
-        err = Xagyl.moveToFilterIndex(nTargetPosition);
+        // nTargetPosition is 0 based, Xagyl wants 1 based position.
+        err = Xagyl.moveToFilterIndex(nTargetPosition+1);
+        if(err)
+            err = ERR_CMDFAILED;
     }
     return err;
 }
@@ -252,21 +298,21 @@ int	X2FilterWheel::isCompleteFilterWheelMoveTo(bool& bComplete) const
         X2MutexLocker ml(pMe->GetMutex());
         err = pMe->Xagyl.isMoveToComplete(bComplete);
         if(err)
-            return ERR_CMDFAILED;
+            err = ERR_CMDFAILED;
     }
-        return SB_OK;
+    return err;
 }
 
 int	X2FilterWheel::endFilterWheelMoveTo(void)
 {
 	X2MutexLocker ml(GetMutex());
-	return ERR_NOT_IMPL;
+	return SB_OK;
 }
 
 int	X2FilterWheel::abortFilterWheelMoveTo(void)
 {
 	X2MutexLocker ml(GetMutex());
-	return ERR_NOT_IMPL;
+	return SB_OK;
 }
 
 #pragma mark -  SerialPortParams2Interface

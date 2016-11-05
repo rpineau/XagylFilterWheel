@@ -24,7 +24,6 @@
 #define SERIAL_BUFFER_SIZE 32
 #define MAX_TIMEOUT 5000
 #define LOG_BUFFER_SIZE 256
-#define MAX_NB_SLOTS 7
 
 enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
 
@@ -58,6 +57,7 @@ public:
     // Filter Wheel commands
     int             getFirmwareVersion(char *version, int strMaxLen);
     int             getModel(char *model, int strMaxLen);
+    int             getSerialnumber(char *serialNumber, int strMaxLen);
     int             getFilterCount(int &nCount);
 
     int             moveToFilterIndex(int nTargetPosition);
@@ -77,7 +77,7 @@ protected:
     char            mLogBuffer[LOG_BUFFER_SIZE];
 
     bool            bCalibrating;
-    int             mTargetFilterIndex;
+    int             mTargetFilterSlot;
 
     filter_params   *mFilterParams;
     wheel_params    mWheelParams;
@@ -88,6 +88,7 @@ protected:
     int             setFilterParamsOnDevice(int fiterIndex, int offset, int threshold);
     int             getNumbersOfSlotsFromDevice(int &nbSlots);
 
+    void             hexdump(unsigned char* inputData, unsigned char *outBuffer, int size);
 
 };
 #endif /* xagyl_h */

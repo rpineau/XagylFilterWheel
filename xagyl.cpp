@@ -13,7 +13,7 @@ CXagyl::CXagyl()
     bIsConnected = false;
     bCalibrating = false;
     bDebugLog = true;
-    mTargetFilterIndex = 0;
+    mTargetFilterSlot = 0;
     mNbSlot = 0;
 }
 
@@ -43,7 +43,7 @@ int CXagyl::Connect(const char *szPort)
     }
 
     // if any of this fails we're not properly connected or there is a hardware issue.
-    
+    printf("[Xagyl::Connect] Getting Firmware\n");
     err = getFirmwareVersion(firmwareVersion, SERIAL_BUFFER_SIZE);
     if(err) {
         if (bDebugLog) {
@@ -61,6 +61,7 @@ int CXagyl::Connect(const char *szPort)
     }
 
     // get the number of slots
+    printf("[Xagyl::Connect] Getting number of slots\n");
     err = getNumbersOfSlots(mNbSlot);
     if(err) {
         if (bDebugLog) {
@@ -71,8 +72,13 @@ int CXagyl::Connect(const char *szPort)
         pSerx->close();
         return ERR_CMDFAILED;
     }
+    if (bDebugLog) {
+        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got number of slots : %d.\n", mNbSlot);
+        mLogger->out(mLogBuffer);
+    }
     
     // get jitter and pulse width
+    printf("[Xagyl::Connect] Getting jitter and pulse width\n");
     err = getGlobalPraramsFromDevice(mWheelParams);
     if(err) {
         if (bDebugLog) {
@@ -82,6 +88,10 @@ int CXagyl::Connect(const char *szPort)
         bIsConnected = false;
         pSerx->close();
         return ERR_CMDFAILED;
+    }
+    if (bDebugLog) {
+        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got number of jitter and pulse width\n");
+        mLogger->out(mLogBuffer);
     }
 
     mFilterParams = new filter_params[mNbSlot];
@@ -117,7 +127,7 @@ int CXagyl::readResponse(char *respBuffer, int bufferLen)
     unsigned long nBytesRead = 0;
     unsigned long totalBytesRead = 0;
     char *bufPtr;
-
+    
     memset(respBuffer, 0, (size_t) bufferLen);
     bufPtr = respBuffer;
 
@@ -127,7 +137,6 @@ int CXagyl::readResponse(char *respBuffer, int bufferLen)
             if (bDebugLog) {
                 snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] readFile error.\n");
                 mLogger->out(mLogBuffer);
-                printf("%s", mLogBuffer);
             }
             return err;
         }
@@ -135,14 +144,12 @@ int CXagyl::readResponse(char *respBuffer, int bufferLen)
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] respBuffer = %s\n",respBuffer);
             mLogger->out(mLogBuffer);
-            printf("%s", mLogBuffer);
         }
 
         if (nBytesRead !=1) {// timeout
             if (bDebugLog) {
                 snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] readFile Timeout.\n");
                 mLogger->out(mLogBuffer);
-                printf("%s", mLogBuffer);
             }
             err = XA_BAD_CMD_RESPONSE;
             break;
@@ -151,24 +158,26 @@ int CXagyl::readResponse(char *respBuffer, int bufferLen)
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] nBytesRead = %lu\n",nBytesRead);
             mLogger->out(mLogBuffer);
-            printf("%s", mLogBuffer);
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] totalBytesRead = %lu\n",totalBytesRead);
+            mLogger->out(mLogBuffer);
         }
     } while (*bufPtr++ != 0xA && totalBytesRead < bufferLen );
 
-    *bufPtr = 0; //remove the 0xA
+    *(bufPtr-2) = 0; //remove the 0xD
+    *(bufPtr-1) = 0; //remove the 0xA
     return err;
 }
 
 
 int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
 {
-    int err = 0;
+    int err = XA_OK;
     char resp[SERIAL_BUFFER_SIZE];
     unsigned long  nBytesWrite;
 
     pSerx->purgeTxRx();
     if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::domeCommand] Sending %s\n",cmd);
+        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Sending %s\n",cmd);
         mLogger->out(mLogBuffer);
         printf("%s", mLogBuffer);
     }
@@ -177,7 +186,6 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] writeFile error.\n");
             mLogger->out(mLogBuffer);
-            printf("%s", mLogBuffer);
         }
         return err;
     }
@@ -185,16 +193,14 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
     if(result) {
         // read response
         if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::domeCommand] Getting response.\n");
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Getting response.\n");
             mLogger->out(mLogBuffer);
-            printf("%s", mLogBuffer);
         }
         err = readResponse(resp, SERIAL_BUFFER_SIZE);
         if(err){
             if (bDebugLog) {
                 snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] readResponse error.\n");
                 mLogger->out(mLogBuffer);
-                printf("%s", mLogBuffer);
             }
         }
         strncpy(result, resp, resultMaxLen);
@@ -247,6 +253,26 @@ int CXagyl::getModel(char *model, int strMaxLen)
     return err;
 }
 
+int CXagyl::getSerialnumber(char *serialNumber, int strMaxLen)
+{
+    int err = 0;
+    char resp[SERIAL_BUFFER_SIZE];
+    
+    if(!bIsConnected)
+        return XA_NOT_CONNECTED;
+    
+    if(bCalibrating)
+        return SB_OK;
+    
+    err = filterWheelCommand("I3", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    
+    strncpy(serialNumber, resp, strMaxLen);
+    return err;
+}
+
+
 int CXagyl::getFilterCount(int &count)
 {
     int err = SB_OK;
@@ -264,11 +290,13 @@ int CXagyl::getFilterCount(int &count)
 int CXagyl::moveToFilterIndex(int nTargetPosition)
 {
     int err = 0;
+    char cmd[SERIAL_BUFFER_SIZE];
     
-    err = filterWheelCommand("Gx", NULL, 0);
+    snprintf(cmd,SERIAL_BUFFER_SIZE, "G%d", nTargetPosition);
+    err = filterWheelCommand(cmd, NULL, 0);
     if(err)
         return err;
-    mTargetFilterIndex = nTargetPosition;
+    mTargetFilterSlot = nTargetPosition;
     return err;
 
 }
@@ -276,20 +304,26 @@ int CXagyl::moveToFilterIndex(int nTargetPosition)
 int CXagyl::isMoveToComplete(bool &complete)
 {
     int err = SB_OK;
-    int filterIndex;
+    int rc = 0;
+    int filterSlot;
     char resp[SERIAL_BUFFER_SIZE];
     
     complete = false;
+    if(mTargetFilterSlot == 0) {
+        complete = true; // we just connected and haven't moved.
+        return err;
+    }
     
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
     // check mTargetFilterIndex against current filter wheel position.
-    err = sscanf(resp, "P%d", &filterIndex);
-    if(err)
-        return err;
+    rc = sscanf(resp, "P%d", &filterSlot);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
     
-    if(filterIndex == mTargetFilterIndex)
+    if(filterSlot == mTargetFilterSlot)
         complete = true;
 
     return err;
@@ -304,7 +338,9 @@ int CXagyl::isMoveToComplete(bool &complete)
 int CXagyl::getNumbersOfSlots(int &nbSlots)
 {
     int err = SB_OK;
-
+    if (bIsConnected) {
+        err = getNumbersOfSlotsFromDevice(mNbSlot);
+    }
     nbSlots = mNbSlot;
     
     return err;
@@ -350,6 +386,7 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
 int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
 {
     int err = SB_OK;
+    int rc = 0;
     char resp[SERIAL_BUFFER_SIZE];
     err = filterWheelCommand("I8", resp, SERIAL_BUFFER_SIZE);
     if(err) {
@@ -360,18 +397,30 @@ int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
         return err;
     }
     // FilterSlots X
-    err = sscanf(resp, "FilterSlots %d", &nbSlots);
-    if(err) {
+    rc = sscanf(resp, "FilterSlots %d", &nbSlots);
+    if(rc == 0) {
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getNumbersOfSlotsFromDevice] Error converting response.\n");
             mLogger->out(mLogBuffer);
         }
-        return err;
+        err = XA_COMMAND_FAILED;
     }
-
     return err;
 }
 
 
+
+void CXagyl::hexdump(unsigned char* inputData, unsigned char *outBuffer, int size)
+{
+    unsigned char *buf = outBuffer;
+    int idx=0;
+    memset(outBuffer,0,size);
+    for(idx=0; idx<size; idx++){
+        
+        snprintf((char *)buf,4,"%02X ", inputData[idx]);
+        buf+=3;
+    }
+    *buf = 0;
+}
 
 
