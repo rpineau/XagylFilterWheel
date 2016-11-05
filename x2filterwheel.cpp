@@ -72,6 +72,9 @@ int	X2FilterWheel::queryAbstraction(const char* pszName, void** ppVal)
 int X2FilterWheel::execModalSettingsDialog()
 {
     int nErr = SB_OK;
+    int i = 0;
+    int nbSlots = 0;
+    char comboString[16];
     X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
     X2GUIInterface*					ui = uiutil.X2UI();
     X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
@@ -89,10 +92,13 @@ int X2FilterWheel::execModalSettingsDialog()
     //Intialize the user interface
 
     //Populate the combo box and set the current index (selection)
-    dx->comboBoxAppendString("comboBox","Model A");
-    dx->comboBoxAppendString("comboBox","Model B");
-    dx->comboBoxAppendString("comboBox","Model C");
-    dx->setCurrentIndex("comboBox",2);
+    Xagyl.getNumbersOfSlots(nbSlots);
+    for (i=0; i< nbSlots; i++){
+        snprintf(comboString, 16, "%d", i);
+        dx->comboBoxAppendString("comboBox", comboString);
+
+    }
+    dx->setCurrentIndex("comboBox",0);
 
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))

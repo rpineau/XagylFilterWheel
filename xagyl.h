@@ -86,6 +86,8 @@ protected:
     int             getGlobalPraramsFromDevice(wheel_params &wheelParams);
     int             getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots);
     int             setFilterParamsOnDevice(int fiterIndex, int offset, int threshold);
-    
+    int             getNumbersOfSlotsFromDevice(int &nbSlots);
+
+
 };
 #endif /* xagyl_h */

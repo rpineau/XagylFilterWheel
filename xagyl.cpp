@@ -256,7 +256,7 @@ int CXagyl::moveToFilterIndex(int nTargetPosition)
 
 int CXagyl::isMoveToComplete(bool &complete)
 {
-    int err = 0;
+    int err = SB_OK;
     int filterIndex;
     char resp[SERIAL_BUFFER_SIZE];
     
@@ -284,7 +284,9 @@ int CXagyl::isMoveToComplete(bool &complete)
 
 int CXagyl::getNumbersOfSlots(int &nbSlots)
 {
-    int err = 0;
+    int err = SB_OK;
+
+    nbSlots = mNbSlot;
     
     return err;
 }
@@ -298,7 +300,7 @@ int CXagyl::getFilterParams(int index, filter_params &params)
 
 int CXagyl::getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots)
 {
-    int err = 0;
+    int err = SB_OK;
     int i = 0;
     
     for(i = 0; i < nbSlots; i++){
@@ -311,7 +313,7 @@ int CXagyl::getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots
 
 int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
 {
-    int err = 0;
+    int err = SB_OK;
     
     return err;
 }
@@ -320,6 +322,13 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
 {
     int err = SB_OK;
     
+    return err;
+}
+
+int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
+{
+    int err = SB_OK;
+
     return err;
 }
 
