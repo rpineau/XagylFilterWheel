@@ -83,7 +83,7 @@ int X2FilterWheel::execModalSettingsDialog()
     if (NULL == ui)
         return ERR_POINTER;
 
-    if ((nErr = ui->loadUserInterface("XagylFilterWheels.ui", deviceType(), m_nPrivateMulitInstanceIndex)))
+    if ((nErr = ui->loadUserInterface("XagylFilterWheel.ui", deviceType(), m_nPrivateMulitInstanceIndex)))
         return nErr;
 
     if (NULL == (dx = uiutil.X2DX()))
@@ -185,7 +185,7 @@ void X2FilterWheel::deviceInfoNameLong(BasicStringInterface& str) const
 
 void X2FilterWheel::deviceInfoDetailedDescription(BasicStringInterface& str) const
 {
-	str = "X2 Xagyl Filter Wheel Plug In by Rodolphe Pinea";
+	str = "X2 Xagyl Filter Wheel Plug In by Rodolphe Pineau";
 	
 }
 

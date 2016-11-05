@@ -168,8 +168,14 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
         mLogger->out(mLogBuffer);
     }
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
-    if(err)
+    if(err){
+        if (bDebugLog) {
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] writeFile error.\n");
+            mLogger->out(mLogBuffer);
+        }
+
         return err;
+    }
 
     if(result) {
         // read response
@@ -182,7 +188,7 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
             return err;
 
         if(result)
-            strncpy(result, &resp[1], resultMaxLen);
+            strncpy(result, resp, resultMaxLen);
     }
     return err;
     
@@ -202,9 +208,13 @@ int CXagyl::getFirmwareVersion(char *version, int strMaxLen)
         return SB_OK;
 
     err = filterWheelCommand("I1", resp, SERIAL_BUFFER_SIZE);
-    if(err)
+    if(err) {
+        if (bDebugLog) {
+            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getFirmwareVersion] Error Getting response from filterWheelCommand.\n");
+            mLogger->out(mLogBuffer);
+        }
         return err;
-
+    }
     strncpy(version, resp, strMaxLen);
     return err;
 }
@@ -230,12 +240,12 @@ int CXagyl::getModel(char *model, int strMaxLen)
 
 int CXagyl::getFilterCount(int &count)
 {
-    int err = 0;
-    char resp[SERIAL_BUFFER_SIZE];
-    count = 0;
-    err = filterWheelCommand("I8", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    int err = SB_OK;
+    
+    if (!mNbSlot && bIsConnected)
+        err = getNumbersOfSlotsFromDevice(count);
+    else
+        count = mNbSlot;
     return err;
 }
 
@@ -328,7 +338,11 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
 int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
 {
     int err = SB_OK;
-
+    char resp[SERIAL_BUFFER_SIZE];
+    err = filterWheelCommand("I8", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    nbSlots = 5;  // FIX ME
     return err;
 }
 
