@@ -123,7 +123,7 @@ int X2FilterWheel::execModalSettingsDialog()
         dx->setEnabled("positionThreshold",true);
 
         
-        snprintf(tmpBuf,16,"-- --");
+        snprintf(tmpBuf,16,"Sensors -- --");
         dx->setPropertyString("sensorValues","text", tmpBuf);
 
     }
@@ -139,6 +139,7 @@ int X2FilterWheel::execModalSettingsDialog()
         dx->setEnabled("comboBox",false);
         dx->setEnabled("positionOffset",false);
         dx->setEnabled("positionThreshold",false);
+        snprintf(tmpBuf,16,"Sensors -- --");
         dx->setPropertyString("sensorValues","text", tmpBuf);
     }
 

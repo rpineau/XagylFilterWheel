@@ -12,7 +12,7 @@ CXagyl::CXagyl()
 {
     bIsConnected = false;
     bCalibrating = false;
-    bDebugLog = true;
+    bDebugLog = false;
     mTargetFilterSlot = 0;
     mNbSlot = 0;
 }
@@ -43,7 +43,6 @@ int CXagyl::Connect(const char *szPort)
     }
 
     // if any of this fails we're not properly connected or there is a hardware issue.
-    printf("[Xagyl::Connect] Getting Firmware\n");
     err = getFirmwareVersion(firmwareVersion, SERIAL_BUFFER_SIZE);
     if(err) {
         if (bDebugLog) {
@@ -61,7 +60,6 @@ int CXagyl::Connect(const char *szPort)
     }
 
     // get the number of slots
-    printf("[Xagyl::Connect] Getting number of slots\n");
     err = getNumbersOfSlots(mNbSlot);
     if(err) {
         if (bDebugLog) {
@@ -78,7 +76,6 @@ int CXagyl::Connect(const char *szPort)
     }
     
     // get jitter and pulse width
-    printf("[Xagyl::Connect] Getting jitter and pulse width\n");
     err = getGlobalPraramsFromDevice(mWheelParams);
     if(err) {
         if (bDebugLog) {
@@ -179,7 +176,6 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
     if (bDebugLog) {
         snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Sending %s\n",cmd);
         mLogger->out(mLogBuffer);
-        printf("%s", mLogBuffer);
     }
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     if(err){
@@ -309,11 +305,7 @@ int CXagyl::isMoveToComplete(bool &complete)
     char resp[SERIAL_BUFFER_SIZE];
     
     complete = false;
-    if(mTargetFilterSlot == 0) {
-        complete = true; // we just connected and haven't moved.
-        return err;
-    }
-    
+
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -322,9 +314,14 @@ int CXagyl::isMoveToComplete(bool &complete)
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
-    
+
+    if (mTargetFilterSlot == 0)
+        mTargetFilterSlot = filterSlot;
+
     if(filterSlot == mTargetFilterSlot)
         complete = true;
+    // TheSkyX makes to many request to fast.. need to slow it down.
+    usleep(200000);
 
     return err;
 }
