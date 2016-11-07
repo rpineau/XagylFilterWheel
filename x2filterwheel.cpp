@@ -143,6 +143,8 @@ int X2FilterWheel::execModalSettingsDialog()
         dx->setPropertyString("sensorValues","text", tmpBuf);
     }
 
+    X2MutexLocker ml(GetMutex());
+    
     //Display the user interface
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
