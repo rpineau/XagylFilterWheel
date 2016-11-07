@@ -77,6 +77,7 @@ protected:
     char            mLogBuffer[LOG_BUFFER_SIZE];
 
     bool            bCalibrating;
+    int             mCurentFilterSlot;
     int             mTargetFilterSlot;
 
     filter_params   *mFilterParams;

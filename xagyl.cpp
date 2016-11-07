@@ -13,6 +13,7 @@ CXagyl::CXagyl()
     bIsConnected = false;
     bCalibrating = false;
     bDebugLog = false;
+    mCurentFilterSlot = -1;
     mTargetFilterSlot = 0;
     mNbSlot = 0;
 }
@@ -305,7 +306,11 @@ int CXagyl::isMoveToComplete(bool &complete)
     char resp[SERIAL_BUFFER_SIZE];
     
     complete = false;
-
+    if(mCurentFilterSlot == mTargetFilterSlot) {
+        complete = true;
+        return err;
+    }
+    
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -318,8 +323,10 @@ int CXagyl::isMoveToComplete(bool &complete)
     if (mTargetFilterSlot == 0)
         mTargetFilterSlot = filterSlot;
 
-    if(filterSlot == mTargetFilterSlot)
+    if(filterSlot == mTargetFilterSlot) {
         complete = true;
+        mCurentFilterSlot = filterSlot;
+    }
     // TheSkyX makes to many request to fast.. need to slow it down.
     usleep(200000);
 
