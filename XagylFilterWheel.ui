@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>X2 Filter Wheel User Interface Example</string>
+   <string>X2 Xagyl Filter Wheel Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
