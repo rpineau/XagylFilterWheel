@@ -180,6 +180,7 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
         mLogger->out(mLogBuffer);
     }
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
+    printf("Command %s sent. wrote %lu bytes\n", cmd, nBytesWrite);
     if(err){
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] writeFile error.\n");
@@ -201,6 +202,7 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
                 mLogger->out(mLogBuffer);
             }
         }
+        printf("Got response : %s\n",resp);
         strncpy(result, resp, resultMaxLen);
     }
     return err;
@@ -289,7 +291,6 @@ int CXagyl::moveToFilterIndex(int nTargetPosition)
 {
     int err = 0;
     char cmd[SERIAL_BUFFER_SIZE];
-    
     snprintf(cmd,SERIAL_BUFFER_SIZE, "G%d", nTargetPosition);
     err = filterWheelCommand(cmd, NULL, 0);
     if(err)
@@ -311,7 +312,6 @@ int CXagyl::isMoveToComplete(bool &complete)
         complete = true;
         return err;
     }
-    printf("Sending I2 command\n");
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -392,7 +392,6 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
     int rc = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
-    printf("Sending I5 command (jitter)\n");
     err = filterWheelCommand("I5", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -401,26 +400,21 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
         wheelParams.jitter = 1;
         return XA_COMMAND_FAILED;
     }
-    printf("Got jitter : %d\n", wheelParams.jitter);
 
-    printf("Sending I9 command (pulse width)\n");
     err = filterWheelCommand("I9", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
-    // check mTargetFilterIndex against current filter wheel position.
+
     rc = sscanf(resp, "Pulse Width %duS", &wheelParams.pulseWidth);
     if(rc == 0) {
-        printf("Checking puslse width in mS\n");
-        rc = sscanf(resp, "Pulse Width %dmS", &wheelParams.pulseWidth);
-        if(rc == 0) {
             wheelParams.pulseWidth = 0;
             return XA_COMMAND_FAILED;
         }
-        else {
-            // no pulse width control.
-            mHasPulseWidthControl = false;
-            printf("No pulse width control\n");
-        }
+
+    if(wheelParams.pulseWidth == 0){
+        // no pulse width control.
+        mHasPulseWidthControl = false;
+        printf("No pulse width control\n");
     }
     else {
         mHasPulseWidthControl = true;
