@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <memory.h>
+#include <time.h>
 #ifdef SB_MAC_BUILD
 #include <unistd.h>
 #endif
@@ -22,7 +23,8 @@
 #include "../../licensedinterfaces/loggerinterface.h"
 
 #define SERIAL_BUFFER_SIZE 32
-#define MAX_TIMEOUT 5000
+#define MAX_TIMEOUT 5000            // in miliseconds
+#define MAX_FILTER_CHANGE_TIMEOUT 25 // in seconds
 #define LOG_BUFFER_SIZE 256
 
 enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
@@ -30,11 +32,14 @@ enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD
 typedef struct {
     int offset;
     int threshold;
+    int LL;
+    int RR;
 } filter_params;
 
 typedef struct {
     int pulseWidth;
     int jitter;
+    int rotationSpeed;
 } wheel_params;
 
 class CXagyl
@@ -64,8 +69,9 @@ public:
     int             isMoveToComplete(bool &complete);
 
     int             getNumbersOfSlots(int &nbSlots);
-    int             getFilterParams(int index, filter_params &params);
-
+    int             getFilterParams(int slotNumber, filter_params &params);
+    int             getFilterWheelParams(wheel_params &filterWheelParams);
+    int             getCurrentSlot(int &slot);
     bool            hasPulseWidthControl();
 
 protected:
@@ -82,13 +88,10 @@ protected:
     bool            mHasPulseWidthControl;
     int             mCurentFilterSlot;
     int             mTargetFilterSlot;
-
-    filter_params   *mFilterParams;
-    wheel_params    mWheelParams;
     
     int             mNbSlot;
-    int             getGlobalPraramsFromDevice(wheel_params &wheelParams);
-    int             getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots);
+    time_t          mStartMoveTime;
+
     int             setFilterParamsOnDevice(int fiterIndex, int offset, int threshold);
     int             getNumbersOfSlotsFromDevice(int &nbSlots);
 

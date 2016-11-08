@@ -80,6 +80,9 @@ int X2FilterWheel::execModalSettingsDialog()
     X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
     bool bPressedOK = false;
     char tmpBuf[SERIAL_BUFFER_SIZE];
+    wheel_params filterWheelParams;
+    filter_params   filterParams;
+    int curSlot;
 
     if (NULL == ui)
         return ERR_POINTER;
@@ -92,6 +95,8 @@ int X2FilterWheel::execModalSettingsDialog()
 
     //Intialize the user interface
     if(m_bLinked) {
+        // get global filter wheel params
+        Xagyl.getFilterWheelParams(filterWheelParams);
         Xagyl.getModel(tmpBuf,16);
         dx->setPropertyString("model","text", tmpBuf);
         Xagyl.getFirmwareVersion(tmpBuf,16);
@@ -101,14 +106,22 @@ int X2FilterWheel::execModalSettingsDialog()
 
         dx->setEnabled("pushButton",true);
 
-        if( Xagyl.hasPulseWidthControl())
+        if( Xagyl.hasPulseWidthControl()){
             dx->setEnabled("pulseWidth",true);
-        else
+            dx->setEnabled("label_3",true);
+            dx->setPropertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+        }
+        else{
             dx->setEnabled("pulseWidth",false);
+            dx->setEnabled("label_3",false);
+            dx->setPropertyInt("pulseWidth", "value", 0);
+        }
 
         dx->setEnabled("rotationSpeed",true);
         dx->setEnabled("jitter",true);
-        
+        dx->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
+        dx->setPropertyInt("jitter", "value", filterWheelParams.jitter);
+
         dx->setEnabled("comboBox",true);
         dx->setEnabled("positionOffset",true);
         dx->setEnabled("positionThreshold",true);
@@ -116,19 +129,21 @@ int X2FilterWheel::execModalSettingsDialog()
 
         //Populate the combo box and set the current index (selection)
         Xagyl.getNumbersOfSlots(nbSlots);
-        printf("Got %d slot from Xagyl.getNumbersOfSlots\n", nbSlots);
         for (i=0; i< nbSlots; i++){
-            snprintf(comboString, 16, "Slot %d", i);
-            printf("Adding %s to combo\n", comboString);
+            snprintf(comboString, 16, "Slot %d", i+1);
             dx->comboBoxAppendString("comboBox", comboString);
             
         }
-        dx->setCurrentIndex("comboBox",0);
+        // what is the current filter ?
+        Xagyl.getCurrentSlot(curSlot);
+        dx->setCurrentIndex("comboBox",curSlot-1);
+        // get filter params
+        Xagyl.getFilterParams(curSlot, filterParams);
         dx->setEnabled("positionOffset",true);
         dx->setEnabled("positionThreshold",true);
-
-        
-        snprintf(tmpBuf,16,"Sensors -- --");
+        dx->setPropertyInt("positionOffset", "value", filterParams.offset);
+        dx->setPropertyInt("positionThreshold", "value", filterParams.threshold);
+        snprintf(tmpBuf,16,"Sensors %d %d", filterParams.LL, filterParams.RR);
         dx->setPropertyString("sensorValues","text", tmpBuf);
 
     }
@@ -168,7 +183,7 @@ int X2FilterWheel::execModalSettingsDialog()
 
 void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
-
+    printf("event : %s\n", pszEvent);
 }
 
 #pragma mark - LinkInterface

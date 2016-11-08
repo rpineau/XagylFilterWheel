@@ -77,33 +77,6 @@ int CXagyl::Connect(const char *szPort)
         mLogger->out(mLogBuffer);
     }
     
-    // get jitter and pulse width
-    err = getGlobalPraramsFromDevice(mWheelParams);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the jitter and pulse width values.\n");
-            mLogger->out(mLogBuffer);
-        }
-        bIsConnected = false;
-        pSerx->close();
-        return ERR_CMDFAILED;
-    }
-    if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got number of jitter and pulse width\n");
-        mLogger->out(mLogBuffer);
-    }
-
-    mFilterParams = new filter_params[mNbSlot];
-    err = getFiltersPraramsFromDevice(mFilterParams, mNbSlot);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the filters parameters.\n");
-            mLogger->out(mLogBuffer);
-        }
-        bIsConnected = false;
-        pSerx->close();
-        return ERR_CMDFAILED;
-    }
     return err;
 }
 
@@ -296,6 +269,7 @@ int CXagyl::moveToFilterIndex(int nTargetPosition)
     if(err)
         return err;
     mTargetFilterSlot = nTargetPosition;
+    mStartMoveTime = time(NULL);
     return err;
 
 }
@@ -306,7 +280,8 @@ int CXagyl::isMoveToComplete(bool &complete)
     int rc = 0;
     int filterSlot;
     char resp[SERIAL_BUFFER_SIZE];
-    
+    time_t  now;
+
     complete = false;
     if(mCurentFilterSlot == mTargetFilterSlot) {
         complete = true;
@@ -328,8 +303,16 @@ int CXagyl::isMoveToComplete(bool &complete)
         complete = true;
         mCurentFilterSlot = filterSlot;
     }
+    now = time(NULL);
+    if(!complete && ((now - mStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
+        printf("timeout\n");
+        mTargetFilterSlot = filterSlot; // to stop the queries
+        
+        return XA_COMMAND_FAILED;
+    }
+    
     // TheSkyX makes to many request to fast.. need to slow it down.
-    usleep(200000);
+    usleep(500000);
 
     return err;
 }
@@ -342,7 +325,7 @@ int CXagyl::isMoveToComplete(bool &complete)
 
 int CXagyl::getNumbersOfSlots(int &nbSlots)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     if (bIsConnected) {
         err = getNumbersOfSlotsFromDevice(mNbSlot);
     }
@@ -351,42 +334,71 @@ int CXagyl::getNumbersOfSlots(int &nbSlots)
     return err;
 }
 
-int CXagyl::getFilterParams(int index, filter_params &params)
+int CXagyl::getFilterParams(int slotNumber, filter_params &params)
 {
     int err = 0;
-    if(index<mNbSlot) {
-        params.offset = mFilterParams[index].offset;
-        params.threshold = mFilterParams[index].threshold;
-    }
-    return err;
-}
+    int rc = 0;
+    int slot;
+    char resp[SERIAL_BUFFER_SIZE];
+    char cmd[SERIAL_BUFFER_SIZE];
 
-bool CXagyl::hasPulseWidthControl()
-{
-    return mHasPulseWidthControl;
-}
-
-int CXagyl::getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots)
-{
-    int err = SB_OK;
-    int i = 0;
-    
-    for(i = 0; i < nbSlots; i++){
-        filterParams[i].offset = 0;
-        filterParams[i].threshold = 0;
+    // get current slot number
+    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    rc = sscanf(resp, "P%d", &slot);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
     }
 
+    // are we on the right slot ?
+    while (slotNumber != slot) {
+        // we need to move to the requested slot
+        snprintf(cmd,SERIAL_BUFFER_SIZE, "G%d", slotNumber);
+        err = filterWheelCommand(cmd, resp, 0);
+        if(err)
+            return err;
+        rc = sscanf(resp, "P%d", &slot);
+        if(rc == 0) {
+            return XA_COMMAND_FAILED;
+        }
+
+    }
+
+    // get position offset of current filter
+    err = filterWheelCommand("I6", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+
+    rc = sscanf(resp, "P%d Offset %d", &slot, &params.offset);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
+
+    // get position threshiold of current filter.
+    err = filterWheelCommand("I7", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+
+    rc = sscanf(resp, "Threshold %d", &params.threshold);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
+
+    // get sensors LL and RR of current filter.
+    err = filterWheelCommand("T0", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+
+    rc = sscanf(resp, "Sensors %d %d", &params.LL, &params.RR);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
+
     return err;
 }
 
-int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
-{
-    int err = SB_OK;
-    
-    return err;
-}
-
-int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
+int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
 {
     int err = SB_OK;
     int rc = 0;
@@ -395,9 +407,9 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
     err = filterWheelCommand("I5", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
-    rc = sscanf(resp, "Jitter %d", &wheelParams.jitter );
+    rc = sscanf(resp, "Jitter %d", &filterWheelParams.jitter );
     if(rc == 0) {
-        wheelParams.jitter = 1;
+        filterWheelParams.jitter = 1;
         return XA_COMMAND_FAILED;
     }
 
@@ -405,24 +417,63 @@ int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
     if(err)
         return err;
 
-    rc = sscanf(resp, "Pulse Width %duS", &wheelParams.pulseWidth);
+    rc = sscanf(resp, "Pulse Width %duS", &filterWheelParams.pulseWidth);
     if(rc == 0) {
-            wheelParams.pulseWidth = 0;
-            return XA_COMMAND_FAILED;
-        }
+        filterWheelParams.pulseWidth = 0;
+        return XA_COMMAND_FAILED;
+    }
 
-    if(wheelParams.pulseWidth == 0){
+    if(filterWheelParams.pulseWidth == 0){
         // no pulse width control.
         mHasPulseWidthControl = false;
-        printf("No pulse width control\n");
     }
     else {
         mHasPulseWidthControl = true;
-        printf("Got pulse width : %d\n", wheelParams.pulseWidth);
-
     }
+
+    err = filterWheelCommand("I4", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    rc = sscanf(resp, "MaxSpeed %d", &filterWheelParams.rotationSpeed );
+    if(rc == 0) {
+        filterWheelParams.rotationSpeed = 100;
+        return XA_COMMAND_FAILED;
+    }
+
     return err;
 }
+
+int CXagyl::getCurrentSlot(int &slot)
+{
+    int err = SB_OK;
+    int rc = 0;
+    char resp[SERIAL_BUFFER_SIZE];
+
+    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+
+    rc = sscanf(resp, "P%d", &slot);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
+
+    return err;
+}
+
+bool CXagyl::hasPulseWidthControl()
+{
+    return mHasPulseWidthControl;
+}
+
+
+int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
+{
+    int err = SB_OK;
+    
+    return err;
+}
+
 
 int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
 {
