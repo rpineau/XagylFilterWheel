@@ -12,6 +12,7 @@ CXagyl::CXagyl()
 {
     bIsConnected = false;
     bCalibrating = false;
+    mHasPulseWidthControl = false;
     bDebugLog = false;
     mCurentFilterSlot = -1;
     mTargetFilterSlot = 0;
@@ -310,7 +311,7 @@ int CXagyl::isMoveToComplete(bool &complete)
         complete = true;
         return err;
     }
-    
+    printf("Sending I2 command\n");
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
@@ -360,6 +361,11 @@ int CXagyl::getFilterParams(int index, filter_params &params)
     return err;
 }
 
+bool CXagyl::hasPulseWidthControl()
+{
+    return mHasPulseWidthControl;
+}
+
 int CXagyl::getFiltersPraramsFromDevice(filter_params *filterParams, int nbSlots)
 {
     int err = SB_OK;
@@ -383,7 +389,44 @@ int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
 int CXagyl::getGlobalPraramsFromDevice(wheel_params &wheelParams)
 {
     int err = SB_OK;
-    
+    int rc = 0;
+    char resp[SERIAL_BUFFER_SIZE];
+
+    printf("Sending I5 command (jitter)\n");
+    err = filterWheelCommand("I5", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    rc = sscanf(resp, "Jitter %d", &wheelParams.jitter );
+    if(rc == 0) {
+        wheelParams.jitter = 1;
+        return XA_COMMAND_FAILED;
+    }
+    printf("Got jitter : %d\n", wheelParams.jitter);
+
+    printf("Sending I9 command (pulse width)\n");
+    err = filterWheelCommand("I9", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    // check mTargetFilterIndex against current filter wheel position.
+    rc = sscanf(resp, "Pulse Width %duS", &wheelParams.pulseWidth);
+    if(rc == 0) {
+        printf("Checking puslse width in mS\n");
+        rc = sscanf(resp, "Pulse Width %dmS", &wheelParams.pulseWidth);
+        if(rc == 0) {
+            wheelParams.pulseWidth = 0;
+            return XA_COMMAND_FAILED;
+        }
+        else {
+            // no pulse width control.
+            mHasPulseWidthControl = false;
+            printf("No pulse width control\n");
+        }
+    }
+    else {
+        mHasPulseWidthControl = true;
+        printf("Got pulse width : %d\n", wheelParams.pulseWidth);
+
+    }
     return err;
 }
 

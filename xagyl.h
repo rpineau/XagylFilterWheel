@@ -65,7 +65,9 @@ public:
 
     int             getNumbersOfSlots(int &nbSlots);
     int             getFilterParams(int index, filter_params &params);
-    
+
+    bool            hasPulseWidthControl();
+
 protected:
     SerXInterface   *pSerx;
     LoggerInterface *mLogger;
@@ -77,6 +79,7 @@ protected:
     char            mLogBuffer[LOG_BUFFER_SIZE];
 
     bool            bCalibrating;
+    bool            mHasPulseWidthControl;
     int             mCurentFilterSlot;
     int             mTargetFilterSlot;
 

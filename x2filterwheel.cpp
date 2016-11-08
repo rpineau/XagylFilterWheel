@@ -100,7 +100,12 @@ int X2FilterWheel::execModalSettingsDialog()
         dx->setPropertyString("serialNumber","text", tmpBuf);
 
         dx->setEnabled("pushButton",true);
-        dx->setEnabled("pulseWidth",true);
+
+        if( Xagyl.hasPulseWidthControl())
+            dx->setEnabled("pulseWidth",true);
+        else
+            dx->setEnabled("pulseWidth",false);
+
         dx->setEnabled("rotationSpeed",true);
         dx->setEnabled("jitter",true);
         
