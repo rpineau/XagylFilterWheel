@@ -26,7 +26,7 @@ CXagyl::~CXagyl()
 
 int CXagyl::Connect(const char *szPort)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     // 9600 8N1
     if(pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
         bIsConnected = true;
@@ -193,7 +193,7 @@ int CXagyl::getFirmwareVersion(char *version, int strMaxLen)
         return XA_NOT_CONNECTED;
 
     if(bCalibrating)
-        return SB_OK;
+        return XA_OK;
 
     err = filterWheelCommand("I1", resp, SERIAL_BUFFER_SIZE);
     if(err) {
@@ -216,7 +216,7 @@ int CXagyl::getModel(char *model, int strMaxLen)
         return XA_NOT_CONNECTED;
 
     if(bCalibrating)
-        return SB_OK;
+        return XA_OK;
 
     err = filterWheelCommand("I0", resp, SERIAL_BUFFER_SIZE);
     if(err)
@@ -235,7 +235,7 @@ int CXagyl::getSerialnumber(char *serialNumber, int strMaxLen)
         return XA_NOT_CONNECTED;
     
     if(bCalibrating)
-        return SB_OK;
+        return XA_OK;
     
     err = filterWheelCommand("I3", resp, SERIAL_BUFFER_SIZE);
     if(err)
@@ -248,7 +248,7 @@ int CXagyl::getSerialnumber(char *serialNumber, int strMaxLen)
 
 int CXagyl::getFilterCount(int &count)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     
     if (bIsConnected)
         err = getNumbersOfSlotsFromDevice(count);
@@ -276,7 +276,7 @@ int CXagyl::moveToFilterIndex(int nTargetPosition)
 
 int CXagyl::isMoveToComplete(bool &complete)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     int rc = 0;
     int filterSlot;
     char resp[SERIAL_BUFFER_SIZE];
@@ -310,7 +310,8 @@ int CXagyl::isMoveToComplete(bool &complete)
         
         return XA_COMMAND_FAILED;
     }
-    
+    printf("now - mStartMoveTime) = %lu\n", now - mStartMoveTime);
+
     // TheSkyX makes to many request to fast.. need to slow it down.
     usleep(500000);
 
@@ -400,7 +401,7 @@ int CXagyl::getFilterParams(int slotNumber, filter_params &params)
 
 int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     int rc = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
@@ -445,7 +446,7 @@ int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
 
 int CXagyl::getCurrentSlot(int &slot)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     int rc = 0;
     char resp[SERIAL_BUFFER_SIZE];
 
@@ -469,7 +470,7 @@ bool CXagyl::hasPulseWidthControl()
 
 int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     
     return err;
 }
@@ -477,7 +478,7 @@ int CXagyl::setFilterParamsOnDevice(int fiterIndex, int offset, int threshold)
 
 int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
 {
-    int err = SB_OK;
+    int err = XA_OK;
     int rc = 0;
     char resp[SERIAL_BUFFER_SIZE];
     err = filterWheelCommand("I8", resp, SERIAL_BUFFER_SIZE);

@@ -23,11 +23,11 @@
 #include "../../licensedinterfaces/loggerinterface.h"
 
 #define SERIAL_BUFFER_SIZE 32
-#define MAX_TIMEOUT 5000            // in miliseconds
+#define MAX_TIMEOUT 1000            // in miliseconds
 #define MAX_FILTER_CHANGE_TIMEOUT 25 // in seconds
 #define LOG_BUFFER_SIZE 256
 
-enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
+enum XagylFilterWheelErrors { XA_OK=SB_OK, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
 
 typedef struct {
     int offset;

@@ -82,7 +82,10 @@ int X2FilterWheel::execModalSettingsDialog()
     char tmpBuf[SERIAL_BUFFER_SIZE];
     wheel_params filterWheelParams;
     filter_params   filterParams;
-    int curSlot;
+    int curSlot = 0;
+    int tmpSlot = 0;
+    int timeout = 0;
+    bool filterChangeCompleted;
 
     if (NULL == ui)
         return ERR_POINTER;
@@ -170,12 +173,20 @@ int X2FilterWheel::execModalSettingsDialog()
         return nErr;
 
     //Retreive values from the user interface
-    if (bPressedOK)
-    {
-        int nModel;
+    if (bPressedOK) {
+        Xagyl.getCurrentSlot(tmpSlot);
+        if(tmpSlot != curSlot) {
+            // move back to curSlot as this is what TheSkyX think is selected
+            Xagyl.moveToFilterIndex(curSlot);
+            do {
+                Xagyl.isMoveToComplete(filterChangeCompleted);
+                sleep(1);
+                timeout++;
+                if (timeout > MAX_FILTER_CHANGE_TIMEOUT)
+                    break;
+            } while (!filterChangeCompleted);
+        }
 
-        //Model
-        nModel = dx->currentIndex("comboBox");
     }
 
     return nErr;
