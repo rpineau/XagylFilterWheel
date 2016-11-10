@@ -158,7 +158,7 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
     pSerx->flushTx();
 
-    printf("Command %s sent. wrote %lu bytes\n", cmd, nBytesWrite);
+    // printf("Command %s sent. wrote %lu bytes\n", cmd, nBytesWrite);
     if(err){
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] writeFile error.\n");
@@ -180,7 +180,7 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
                 mLogger->out(mLogBuffer);
             }
         }
-        printf("Got response : %s\n",resp);
+        // printf("Got response : %s\n",resp);
         strncpy(result, resp, resultMaxLen);
     }
     return err;
@@ -319,7 +319,7 @@ int CXagyl::isMoveToComplete(bool &complete)
         
         return XA_COMMAND_FAILED;
     }
-    printf("now - mStartMoveTime) = %lu\n", now - mStartMoveTime);
+    // printf("now - mStartMoveTime) = %lu\n", now - mStartMoveTime);
 
     return err;
 }
