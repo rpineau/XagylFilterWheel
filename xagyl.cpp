@@ -77,6 +77,9 @@ int CXagyl::Connect(const char *szPort)
         mLogger->out(mLogBuffer);
     }
     
+    // set wheel to verbose mode
+    // char resp[SERIAL_BUFFER_SIZE];
+    // filterWheelCommand("V1", resp, SERIAL_BUFFER_SIZE);
     return err;
 }
 
@@ -153,6 +156,8 @@ int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
         mLogger->out(mLogBuffer);
     }
     err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
+    pSerx->flushTx();
+
     printf("Command %s sent. wrote %lu bytes\n", cmd, nBytesWrite);
     if(err){
         if (bDebugLog) {
@@ -293,7 +298,7 @@ int CXagyl::isMoveToComplete(bool &complete)
     // check mTargetFilterIndex against current filter wheel position.
     rc = sscanf(resp, "P%d", &filterSlot);
     if(rc == 0) {
-        return XA_COMMAND_FAILED;
+        return XA_OK; // this is fine as this mean we got some other response and we can ignore it as the next call will catch the proper I2 response
     }
 
     if (mTargetFilterSlot == 0)
