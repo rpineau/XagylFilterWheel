@@ -295,6 +295,10 @@ int CXagyl::isMoveToComplete(bool &complete)
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
+    // are we still moving ?
+    if(strstr(resp,"Moving"))
+        return XA_OK;
+    
     // check mTargetFilterIndex against current filter wheel position.
     rc = sscanf(resp, "P%d", &filterSlot);
     if(rc == 0) {
@@ -316,9 +320,6 @@ int CXagyl::isMoveToComplete(bool &complete)
         return XA_COMMAND_FAILED;
     }
     printf("now - mStartMoveTime) = %lu\n", now - mStartMoveTime);
-
-    // TheSkyX makes to many request to fast.. need to slow it down.
-    usleep(500000);
 
     return err;
 }
