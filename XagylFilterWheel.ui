@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>X2 Xagyl Filter Wheel Settings</string>
+   <string>Xagyl Filter Wheel Settings</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_6">
    <item>
