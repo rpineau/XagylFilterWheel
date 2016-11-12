@@ -325,12 +325,10 @@ int CXagyl::isMoveToComplete(bool &complete)
     }
     now = time(NULL);
     if(!complete && ((now - mStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
-        printf("timeout\n");
         mTargetFilterSlot = filterSlot; // to stop the queries
         
         return XA_COMMAND_FAILED;
     }
-    // printf("now - mStartMoveTime) = %lu\n", now - mStartMoveTime);
 
     return err;
 }
@@ -438,26 +436,21 @@ int CXagyl::setSlotParams(int slotNumber, int offset)
     // get slot params, this will move the the right slot if needed
     getSlotParams(slotNumber, params);
 
-    printf("params.offset    = %d\n", params.offset);
     // set position offset
     if(params.offset > offset) {
         nbDec = (params.offset - offset);
-        printf("offset nbDec = %d\n", nbDec);
         for(i = 0; i < nbDec; i++) {
             err = filterWheelCommand(")0", resp, SERIAL_BUFFER_SIZE);
             if(err)
                 return err;
-            printf("Resp for offset decrease : %s\n", resp);
         }
     }
     else if (params.offset < offset) {
         nbInc = (offset - params.offset);
-        printf("offset nbInc = %d\n", nbInc);
         for(i = 0; i < nbInc; i++) {
             err = filterWheelCommand("(0", resp, SERIAL_BUFFER_SIZE);
             if(err)
                 return err;
-            printf("Resp for offset increase : %s\n", resp);
         }
     }
 
@@ -518,12 +511,6 @@ int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
         return XA_COMMAND_FAILED;
     }
 
-    printf("filterWheelParams : \n");
-    printf("    pulseWidth    : %d\n", filterWheelParams.pulseWidth);
-    printf("    rotationSpeed : %d\n", filterWheelParams.rotationSpeed);
-    printf("    jitter        : %d\n", filterWheelParams.jitter);
-    printf("    threshold     : %d\n", filterWheelParams.threshold);
-
     return err;
 }
 
@@ -536,12 +523,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
 
     char cmd[SERIAL_BUFFER_SIZE];
     char resp[SERIAL_BUFFER_SIZE];
-
-    printf("filterWheelParams : \n");
-    printf("    pulseWidth    : %d\n", filterWheelParams.pulseWidth);
-    printf("    rotationSpeed : %d\n", filterWheelParams.rotationSpeed);
-    printf("    jitter        : %d\n", filterWheelParams.jitter);
-    printf("    threshold     : %d\n", filterWheelParams.threshold);
 
     if(hasPulseWidthControl()) {
         if(mWheelParams.pulseWidth > filterWheelParams.pulseWidth) {
@@ -566,7 +547,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
     err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
-    printf("Resp for rotationSpeed : %s\n", resp);
 
     if(mWheelParams.jitter > filterWheelParams.jitter) {
         nbDec = (mWheelParams.jitter - filterWheelParams.jitter);
@@ -574,7 +554,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
             err = filterWheelCommand("[0", resp, SERIAL_BUFFER_SIZE);
             if(err)
                 return err;
-            printf("Resp for jitter decrease : %s\n", resp);
         }
     }
     else if (mWheelParams.jitter < filterWheelParams.jitter) {
@@ -583,7 +562,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
             err = filterWheelCommand("]0", resp, SERIAL_BUFFER_SIZE);
             if(err)
                 return err;
-            printf("Resp for jitter increase : %s\n", resp);
         }
     }
 
@@ -594,7 +572,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
             err = filterWheelCommand("{0", resp, SERIAL_BUFFER_SIZE);
             if(err)
                 return err;
-            printf("Resp for threshold decrease : %s\n", resp);
         }
     }
     else if (mWheelParams.threshold < filterWheelParams.threshold) {
@@ -603,7 +580,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
             err = filterWheelCommand("}0", resp, SERIAL_BUFFER_SIZE);
             if(err)
                 return err;
-            printf("Resp for threshold increase : %s\n", resp);
         }
     }
 
@@ -623,7 +599,6 @@ int CXagyl::resetAllToDefault()
         snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", i);
         err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
         // we ignore the error for now.
-        printf("reset command %s response : %s\n", cmd, resp);
     }
     err = getFilterWheelParams(mWheelParams);
 

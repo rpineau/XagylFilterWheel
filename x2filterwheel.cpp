@@ -134,11 +134,7 @@ int X2FilterWheel::execModalSettingsDialog()
         dx->setEnabled("pushButton_3",true);
 
         //Populate the combo box and set the current index (selection)
-        printf("clearing comboBox\n");
-
         dx->invokeMethod("comboBox","clear");
-
-        printf("filling comboBox\n");
         Xagyl.getNumbersOfSlots(nbSlots);
         for (i=0; i< nbSlots; i++){
             snprintf(comboString, 16, "Slot %d", i+1);
@@ -146,9 +142,7 @@ int X2FilterWheel::execModalSettingsDialog()
             
         }
 
-        printf("calling Xagyl.getCurrentSlot\n");
-        Xagyl.getCurrentSlot(curSlot);
-        printf("calling updateFilterControls\n");
+        Xagyl.getCurrentSlot(curSlot); // we need it to restore the position after the settings are done.
         updateFilterControls(dx);
         mWheelState = IDLE;
 
@@ -177,22 +171,15 @@ int X2FilterWheel::execModalSettingsDialog()
     X2MutexLocker ml(GetMutex());
     
     //Display the user interface
-    printf("Displaying UI\n");
     mUiEnabled = true;
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
     mUiEnabled = false;
 
-    printf("UI Done\n");
-
     //Retreive values from the user interface
     if (bPressedOK) {
-        printf("Selected Filter : %d\n",dx->currentIndex("comboBox")+1);
-        printf("Checking what slot we're on\n");
         Xagyl.getCurrentSlot(tmpSlot);
-        printf("Done\n");
         if(tmpSlot != curSlot) {
-            printf("Moving back to slot %d (it's on slot %d now)\n", curSlot, tmpSlot);
             // move back to curSlot as this is what TheSkyX think is selected
             Xagyl.moveToFilterIndex(curSlot);
             do {
@@ -272,7 +259,6 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     // change filter
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
         filterCombBoxIndex = uiex->currentIndex("comboBox");
-        printf("[uiEvent] Slot %d selected\n", filterCombBoxIndex+1);
         Xagyl.moveToFilterIndex(filterCombBoxIndex+1);
         mWheelState = MOVING;
         enableFilterControls(uiex, false);
@@ -314,7 +300,6 @@ void X2FilterWheel::updateFilterControls(X2GUIExchangeInterface* dx)
 
     // what is the current filter ?
     Xagyl.getCurrentSlot(curSlot);
-    printf("[updateFilterControls] curSlot = %d\n", curSlot);
     if(curSlot == 0)
         return;
 
