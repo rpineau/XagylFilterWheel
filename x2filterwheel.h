@@ -46,6 +46,8 @@ class TickCountInterface;
 
 #define LOG_BUFFER_SIZE 256
 
+enum wheelState { IDLE = 0, MOVING, CALIBRATING};
+
 /*!
 \brief The X2FilterWheel example.
 
@@ -147,27 +149,30 @@ public:
 // Implementation
 private:	
 
-	SerXInterface 							*GetSerX() {return m_pSerX; }		
-	TheSkyXFacadeForDriversInterface		*GetTheSkyXFacadeForDrivers() {return m_pTheSkyXForMounts;}
-	SleeperInterface						*GetSleeper() {return m_pSleeper; }
-	BasicIniUtilInterface					*GetSimpleIniUtil() {return m_pIniUtil; }
-	LoggerInterface							*GetLogger() {return m_pLogger; }
-	MutexInterface							*GetMutex()  {return m_pIOMutex;}
-	TickCountInterface						*GetTickCountInterface() {return m_pTickCount;}
+	SerXInterface                       *GetSerX() {return m_pSerX; }
+	TheSkyXFacadeForDriversInterface	*GetTheSkyXFacadeForDrivers() {return m_pTheSkyXForMounts;}
+	SleeperInterface					*GetSleeper() {return m_pSleeper; }
+	BasicIniUtilInterface				*GetSimpleIniUtil() {return m_pIniUtil; }
+	LoggerInterface						*GetLogger() {return m_pLogger; }
+	MutexInterface						*GetMutex()  {return m_pIOMutex;}
+	TickCountInterface					*GetTickCountInterface() {return m_pTickCount;}
 
-    void portNameOnToCharPtr(char* pszPort, const int& nMaxSize) const;
+    void                                portNameOnToCharPtr(char* pszPort, const int& nMaxSize) const;
+    void                                updateFilterControls(X2GUIExchangeInterface* dx);
+    void                                enableFilterControls(X2GUIExchangeInterface* dx, bool enable);
 
-	int m_nPrivateMulitInstanceIndex;
-	SerXInterface*							m_pSerX;		
-	TheSkyXFacadeForDriversInterface* 		m_pTheSkyXForMounts;
-	SleeperInterface*						m_pSleeper;
-	BasicIniUtilInterface*					m_pIniUtil;
-	LoggerInterface*							m_pLogger;
-	MutexInterface*							m_pIOMutex;
-	TickCountInterface*						m_pTickCount;
+	int                                 m_nPrivateMulitInstanceIndex;
+	SerXInterface*                      m_pSerX;
+	TheSkyXFacadeForDriversInterface* 	m_pTheSkyXForMounts;
+	SleeperInterface*					m_pSleeper;
+	BasicIniUtilInterface*				m_pIniUtil;
+	LoggerInterface*					m_pLogger;
+	MutexInterface*						m_pIOMutex;
+	TickCountInterface*					m_pTickCount;
 
-    CXagyl      Xagyl;
-    int         m_bLinked;
-
+    CXagyl                              Xagyl;
+    int                                 m_bLinked;
+    int                                 mWheelState; // use in the Settings dialog only.
+    bool                                mUiEnabled;
 
 };

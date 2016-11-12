@@ -33,6 +33,7 @@ enum XagylFilterWheelErrors { XA_OK=SB_OK, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA
 enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD_CMD_RESPONSE, XA_COMMAND_FAILED};
 #endif
 
+
 typedef struct {
     int offset;
     int threshold;
@@ -73,8 +74,11 @@ public:
     int             isMoveToComplete(bool &complete);
 
     int             getNumbersOfSlots(int &nbSlots);
-    int             getFilterParams(int slotNumber, filter_params &params);
+    int             getSlotParams(int slotNumber, filter_params &params);
+    int             setSlotParams(int slotNumber, int offset, int threshold);
+
     int             getFilterWheelParams(wheel_params &filterWheelParams);
+    int             setFilterWheelParams(wheel_params filterWheelParams);
     int             getCurrentSlot(int &slot);
     bool            hasPulseWidthControl();
 
@@ -95,11 +99,11 @@ protected:
     
     int             mNbSlot;
     time_t          mStartMoveTime;
+    wheel_params    mWheelParams;
 
-    int             setFilterParamsOnDevice(int fiterIndex, int offset, int threshold);
     int             getNumbersOfSlotsFromDevice(int &nbSlots);
 
-    void             hexdump(unsigned char* inputData, unsigned char *outBuffer, int size);
+    void            hexdump(unsigned char* inputData, unsigned char *outBuffer, int size);
 
 };
 #endif /* xagyl_h */
