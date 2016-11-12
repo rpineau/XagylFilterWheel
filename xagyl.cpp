@@ -464,7 +464,6 @@ int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
 int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
 {
     int err = XA_OK;
-    int rc = 0;
     int nbDec;
     int nbInc;
     int i;

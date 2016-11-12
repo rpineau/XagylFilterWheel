@@ -212,6 +212,7 @@ int X2FilterWheel::execModalSettingsDialog()
 
 void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
+    int err = SB_OK;
     int filterCombBoxIndex;
     bool filterChangeCompleted;
     wheel_params filterWheelParams;
@@ -254,7 +255,7 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
         }
         uiex->propertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
         uiex->propertyInt("jitter", "value", filterWheelParams.jitter);
-        Xagyl.setFilterWheelParams(filterWheelParams);
+        err = Xagyl.setFilterWheelParams(filterWheelParams);
 
     }
     // apply filter settings.
