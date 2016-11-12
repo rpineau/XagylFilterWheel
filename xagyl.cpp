@@ -352,6 +352,25 @@ int CXagyl::getNumbersOfSlots(int &nbSlots)
     return err;
 }
 
+int CXagyl::getCurrentSlot(int &slot)
+{
+    int err = XA_OK;
+    int rc = 0;
+    char resp[SERIAL_BUFFER_SIZE];
+
+    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
+    if(err) {
+        return err;
+    }
+    rc = sscanf(resp, "P%d", &slot);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
+
+    return err;
+}
+
+
 int CXagyl::getSlotParams(int slotNumber, filter_params &params)
 {
     int err = XA_OK;
@@ -393,16 +412,6 @@ int CXagyl::getSlotParams(int slotNumber, filter_params &params)
         return XA_COMMAND_FAILED;
     }
 
-    // get position threshiold of current filter.
-    err = filterWheelCommand("I7", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-
-    rc = sscanf(resp, "Threshold %d", &params.threshold);
-    if(rc == 0) {
-        return XA_COMMAND_FAILED;
-    }
-
     // get sensors LL and RR of current filter.
     err = filterWheelCommand("T0", resp, SERIAL_BUFFER_SIZE);
     if(err)
@@ -412,6 +421,47 @@ int CXagyl::getSlotParams(int slotNumber, filter_params &params)
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
+
+    return err;
+}
+
+int CXagyl::setSlotParams(int slotNumber, int offset)
+{
+    int err = XA_OK;
+    int i;
+    filter_params params;
+    int nbDec;
+    int nbInc;
+
+    char resp[SERIAL_BUFFER_SIZE];
+
+    // get slot params, this will move the the right slot if needed
+    getSlotParams(slotNumber, params);
+
+    printf("params.offset    = %d\n", params.offset);
+    // set position offset
+    if(params.offset > offset) {
+        nbDec = (params.offset - offset);
+        printf("offset nbDec = %d\n", nbDec);
+        for(i = 0; i < nbDec; i++) {
+            err = filterWheelCommand(")0", resp, SERIAL_BUFFER_SIZE);
+            if(err)
+                return err;
+            printf("Resp for offset decrease : %s\n", resp);
+        }
+    }
+    else if (params.offset < offset) {
+        nbInc = (offset - params.offset);
+        printf("offset nbInc = %d\n", nbInc);
+        for(i = 0; i < nbInc; i++) {
+            err = filterWheelCommand("(0", resp, SERIAL_BUFFER_SIZE);
+            if(err)
+                return err;
+            printf("Resp for offset increase : %s\n", resp);
+        }
+    }
+
+
 
     return err;
 }
@@ -458,6 +508,22 @@ int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
         return XA_COMMAND_FAILED;
     }
 
+    // get position threshiold of current filter.
+    err = filterWheelCommand("I7", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+
+    rc = sscanf(resp, "Threshold %d", &filterWheelParams.threshold);
+    if(rc == 0) {
+        return XA_COMMAND_FAILED;
+    }
+
+    printf("filterWheelParams : \n");
+    printf("    pulseWidth    : %d\n", filterWheelParams.pulseWidth);
+    printf("    rotationSpeed : %d\n", filterWheelParams.rotationSpeed);
+    printf("    jitter        : %d\n", filterWheelParams.jitter);
+    printf("    threshold     : %d\n", filterWheelParams.threshold);
+
     return err;
 }
 
@@ -471,10 +537,11 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
     char cmd[SERIAL_BUFFER_SIZE];
     char resp[SERIAL_BUFFER_SIZE];
 
-    printf("Params : \n");
+    printf("filterWheelParams : \n");
     printf("    pulseWidth    : %d\n", filterWheelParams.pulseWidth);
     printf("    rotationSpeed : %d\n", filterWheelParams.rotationSpeed);
     printf("    jitter        : %d\n", filterWheelParams.jitter);
+    printf("    threshold     : %d\n", filterWheelParams.threshold);
 
     if(hasPulseWidthControl()) {
         if(mWheelParams.pulseWidth > filterWheelParams.pulseWidth) {
@@ -520,25 +587,45 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
         }
     }
 
+    // set Threshold
+    if(mWheelParams.threshold > filterWheelParams.threshold) {
+        nbDec = (mWheelParams.threshold - filterWheelParams.threshold);
+        for(i = 0; i < nbDec; i++) {
+            err = filterWheelCommand("{0", resp, SERIAL_BUFFER_SIZE);
+            if(err)
+                return err;
+            printf("Resp for threshold decrease : %s\n", resp);
+        }
+    }
+    else if (mWheelParams.threshold < filterWheelParams.threshold) {
+        nbInc = (filterWheelParams.threshold - mWheelParams.threshold);
+        for(i = 0; i < nbInc; i++) {
+            err = filterWheelCommand("}0", resp, SERIAL_BUFFER_SIZE);
+            if(err)
+                return err;
+            printf("Resp for threshold increase : %s\n", resp);
+        }
+    }
+
     // update internal params structure
     getFilterWheelParams(mWheelParams);
     return err;
 }
 
-int CXagyl::getCurrentSlot(int &slot)
+int CXagyl::resetAllToDefault()
 {
     int err = XA_OK;
-    int rc = 0;
+    int i;
+    char cmd[SERIAL_BUFFER_SIZE];
     char resp[SERIAL_BUFFER_SIZE];
 
-    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
-    if(err) {
-        return err;
+    for (i=2;i<6;i++){
+        snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", i);
+        err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
+        // we ignore the error for now.
+        printf("reset command %s response : %s\n", cmd, resp);
     }
-    rc = sscanf(resp, "P%d", &slot);
-    if(rc == 0) {
-        return XA_COMMAND_FAILED;
-    }
+    err = getFilterWheelParams(mWheelParams);
 
     return err;
 }
@@ -546,42 +633,6 @@ int CXagyl::getCurrentSlot(int &slot)
 bool CXagyl::hasPulseWidthControl()
 {
     return mHasPulseWidthControl;
-}
-
-
-int CXagyl::setSlotParams(int slotNumber, int offset, int threshold)
-{
-    int err = XA_OK;
-    int rc = 0;
-    int slot;
-    char resp[SERIAL_BUFFER_SIZE];
-    char cmd[SERIAL_BUFFER_SIZE];
-
-    // get current slot number
-    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-    rc = sscanf(resp, "P%d", &slot);
-    if(rc == 0) {
-        return XA_COMMAND_FAILED;
-    }
-
-    // are we on the right slot ?
-    while (slotNumber != slot) {
-        // we need to move to the requested slot
-        snprintf(cmd,SERIAL_BUFFER_SIZE, "G%d", slotNumber);
-        err = filterWheelCommand(cmd, resp, 0);
-        if(err)
-            return err;
-        rc = sscanf(resp, "P%d", &slot);
-        if(rc == 0) {
-            return XA_COMMAND_FAILED;
-        }
-        
-    }
-
-    
-    return err;
 }
 
 

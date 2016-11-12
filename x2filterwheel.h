@@ -144,7 +144,7 @@ public:
 	See X2GUIEventInterface.*/
 	//@{ 
 	virtual void uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent);
-	//@} 
+	//@}
 
 // Implementation
 private:	
@@ -160,7 +160,8 @@ private:
     void                                portNameOnToCharPtr(char* pszPort, const int& nMaxSize) const;
     void                                updateFilterControls(X2GUIExchangeInterface* dx);
     void                                enableFilterControls(X2GUIExchangeInterface* dx, bool enable);
-
+    void                                updateSlotData(X2GUIExchangeInterface* dx, int slotIndex);
+    
 	int                                 m_nPrivateMulitInstanceIndex;
 	SerXInterface*                      m_pSerX;
 	TheSkyXFacadeForDriversInterface* 	m_pTheSkyXForMounts;

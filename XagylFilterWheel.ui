@@ -253,6 +253,32 @@
            </property>
           </widget>
          </item>
+         <item row="8" column="2">
+          <widget class="QSpinBox" name="positionThreshold"/>
+         </item>
+         <item row="8" column="1">
+          <widget class="QLabel" name="label_13">
+           <property name="text">
+            <string>Position Threshold :</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <spacer name="horizontalSpacer_10">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
         </layout>
        </widget>
       </item>
@@ -312,16 +338,6 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QLabel" name="label_13">
-           <property name="text">
-            <string>Position Threshold :</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QLabel" name="label">
            <property name="text">
@@ -335,25 +351,12 @@
          <item row="1" column="2">
           <widget class="QSpinBox" name="positionOffset">
            <property name="minimum">
-            <number>0</number>
+            <number>-100</number>
            </property>
            <property name="maximum">
-            <number>99</number>
+            <number>100</number>
            </property>
           </widget>
-         </item>
-         <item row="2" column="0">
-          <spacer name="horizontalSpacer_10">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
          <item row="1" column="1">
           <widget class="QLabel" name="label_12">
@@ -380,9 +383,6 @@
          </item>
          <item row="0" column="2">
           <widget class="QComboBox" name="comboBox"/>
-         </item>
-         <item row="2" column="2">
-          <widget class="QSpinBox" name="positionThreshold"/>
          </item>
          <item row="0" column="0">
           <spacer name="horizontalSpacer_2">
@@ -455,6 +455,13 @@
          </widget>
         </item>
        </layout>
+      </item>
+      <item row="5" column="0">
+       <widget class="QPushButton" name="pushButton_4">
+        <property name="text">
+         <string>Reset all to default</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

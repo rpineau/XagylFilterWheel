@@ -123,13 +123,14 @@ int X2FilterWheel::execModalSettingsDialog()
 
         dx->setEnabled("rotationSpeed",true);
         dx->setEnabled("jitter",true);
+        dx->setEnabled("positionThreshold",true);
         dx->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
         dx->setPropertyInt("jitter", "value", filterWheelParams.jitter);
+        dx->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
         dx->setEnabled("pushButton_2",true);
 
         dx->setEnabled("comboBox",true);
         dx->setEnabled("positionOffset",true);
-        dx->setEnabled("positionThreshold",true);
         dx->setEnabled("pushButton_3",true);
 
         //Populate the combo box and set the current index (selection)
@@ -162,11 +163,11 @@ int X2FilterWheel::execModalSettingsDialog()
         dx->setEnabled("pulseWidth",false);
         dx->setEnabled("rotationSpeed",false);
         dx->setEnabled("jitter",false);
+        dx->setEnabled("positionThreshold",false);
         dx->setEnabled("pushButton_2",false);
 
         dx->setEnabled("comboBox",false);
         dx->setEnabled("positionOffset",false);
-        dx->setEnabled("positionThreshold",false);
         snprintf(tmpBuf,16,"Sensors -- --");
         dx->setEnabled("pushButton_3",false);
 
@@ -222,7 +223,8 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     // on_pushButton_clicked -> calibrate
     // on_pushButton_2_clicked -> apply on wheel settings
     // on_comboBox_currentIndexChanged -> filter change
-    // on_pushButton_3_clicked on filter seetings
+    // on_pushButton_3_clicked -> apply filter slot changes
+    // on_pushButton_4_clicked -> reset all to default
 
     // the test for mUiEnabled is done because even if the UI is not displayed we get events on the comboBox changes when we fill it.
     if(!m_bLinked or !mUiEnabled)
@@ -235,6 +237,8 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
             if(filterChangeCompleted) {
                 mWheelState = IDLE;
                 enableFilterControls(uiex, true);
+                // update filter data
+                updateFilterControls(uiex);
             }
             break;
 
@@ -255,12 +259,15 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
         }
         uiex->propertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
         uiex->propertyInt("jitter", "value", filterWheelParams.jitter);
+        uiex->propertyInt("positionThreshold", "value", filterWheelParams.threshold);
         err = Xagyl.setFilterWheelParams(filterWheelParams);
 
     }
     // apply filter settings.
     else if (!strcmp(pszEvent, "on_pushButton_3_clicked")) {
-
+        filterCombBoxIndex = uiex->currentIndex("comboBox");
+        uiex->propertyInt("positionOffset", "value", filterParams.offset);
+        Xagyl.setSlotParams(filterCombBoxIndex+1, filterParams.offset);
     }
     // change filter
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
@@ -271,11 +278,17 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
         enableFilterControls(uiex, false);
     }
 
-    else if (!strcmp(pszEvent, "on_pushButton_3_clicked")) {
-
+    else if (!strcmp(pszEvent, "on_pushButton_4_clicked")) {
+        err = Xagyl.resetAllToDefault();
+        updateFilterControls(uiex);
+        Xagyl.getFilterWheelParams(filterWheelParams);
+        if(Xagyl.hasPulseWidthControl()) {
+            uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+        }
+        uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
+        uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
+        uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
     }
-
-
 }
 
 void X2FilterWheel::enableFilterControls(X2GUIExchangeInterface* dx, bool enable) {
@@ -283,17 +296,16 @@ void X2FilterWheel::enableFilterControls(X2GUIExchangeInterface* dx, bool enable
     if(enable) {
         dx->setEnabled("comboBox",true);
         dx->setEnabled("positionOffset",true);
-        dx->setEnabled("positionThreshold",true);
         dx->setEnabled("pushButton_3",true);
     }
     else {
         dx->setEnabled("comboBox",false);
         dx->setEnabled("positionOffset",false);
-        dx->setEnabled("positionThreshold",false);
         dx->setEnabled("pushButton_3",false);
     }
-
 }
+
+
 void X2FilterWheel::updateFilterControls(X2GUIExchangeInterface* dx)
 {
     int curSlot = 0;
@@ -310,9 +322,7 @@ void X2FilterWheel::updateFilterControls(X2GUIExchangeInterface* dx)
     // get filter params
     Xagyl.getSlotParams(curSlot, filterParams);
     dx->setEnabled("positionOffset",true);
-    dx->setEnabled("positionThreshold",true);
     dx->setPropertyInt("positionOffset", "value", filterParams.offset);
-    dx->setPropertyInt("positionThreshold", "value", filterParams.threshold);
     snprintf(tmpBuf,16,"Sensors %d %d", filterParams.LL, filterParams.RR);
     dx->setPropertyString("sensorValues","text", tmpBuf);
 

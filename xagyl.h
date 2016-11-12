@@ -36,7 +36,6 @@ enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD
 
 typedef struct {
     int offset;
-    int threshold;
     int LL;
     int RR;
 } filter_params;
@@ -45,6 +44,7 @@ typedef struct {
     int pulseWidth;
     int jitter;
     int rotationSpeed;
+    int threshold;
 } wheel_params;
 
 class CXagyl
@@ -74,12 +74,15 @@ public:
     int             isMoveToComplete(bool &complete);
 
     int             getNumbersOfSlots(int &nbSlots);
+    int             getCurrentSlot(int &slot);
+
     int             getSlotParams(int slotNumber, filter_params &params);
-    int             setSlotParams(int slotNumber, int offset, int threshold);
+    int             setSlotParams(int slotNumber, int offset);
 
     int             getFilterWheelParams(wheel_params &filterWheelParams);
     int             setFilterWheelParams(wheel_params filterWheelParams);
-    int             getCurrentSlot(int &slot);
+
+    int             resetAllToDefault();
     bool            hasPulseWidthControl();
 
 protected:
