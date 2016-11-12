@@ -160,6 +160,7 @@ private:
     void                                portNameOnToCharPtr(char* pszPort, const int& nMaxSize) const;
     void                                updateFilterControls(X2GUIExchangeInterface* dx);
     void                                enableFilterControls(X2GUIExchangeInterface* dx, bool enable);
+    void                                enableWheelControls(X2GUIExchangeInterface* dx, bool enable);
     void                                updateSlotData(X2GUIExchangeInterface* dx, int slotIndex);
     
 	int                                 m_nPrivateMulitInstanceIndex;

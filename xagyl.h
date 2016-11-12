@@ -82,6 +82,9 @@ public:
     int             getFilterWheelParams(wheel_params &filterWheelParams);
     int             setFilterWheelParams(wheel_params filterWheelParams);
 
+    int             startCalibration();
+    int             isCalibrationComplete(bool &complete);
+    
     int             resetAllToDefault();
     bool            hasPulseWidthControl();
 

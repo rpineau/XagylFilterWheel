@@ -304,12 +304,13 @@ int CXagyl::isMoveToComplete(bool &complete)
         return err;
     }
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
-    if(err)
+    if(err) {
         return err;
+    }
     // are we still moving ?
-    if(strstr(resp,"Moving"))
+    if(strstr(resp,"Moving")) {
         return XA_OK;
-    
+    }
     // check mTargetFilterIndex against current filter wheel position.
     rc = sscanf(resp, "P%d", &filterSlot);
     if(rc == 0) {
@@ -587,6 +588,46 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
     getFilterWheelParams(mWheelParams);
     return err;
 }
+
+
+int CXagyl::startCalibration()
+{
+    int err = XA_OK;
+    char resp[SERIAL_BUFFER_SIZE];
+
+    err = filterWheelCommand("R6", resp, SERIAL_BUFFER_SIZE);
+    if(err)
+        return err;
+    
+    if(!strstr(resp,"Calibrating"))
+        err = XA_COMMAND_FAILED;
+    
+    return err;
+}
+
+int CXagyl::isCalibrationComplete(bool &complete)
+{
+    int err = XA_OK;
+    int nbWaitingByte;
+    char resp[SERIAL_BUFFER_SIZE];
+    
+    complete = false;
+    
+    // do we have any data waiting ?
+    pSerx->bytesWaitingRx(nbWaitingByte);
+    if (nbWaitingByte) {
+        err = readResponse(resp, SERIAL_BUFFER_SIZE);
+        if(err)
+            return err;
+        if(strstr(resp,"Done")) {
+            complete = true;
+            mCurentFilterSlot = 1; // calibration send us back to filter 1
+        }
+    }
+    return err;
+}
+
+
 
 int CXagyl::resetAllToDefault()
 {
