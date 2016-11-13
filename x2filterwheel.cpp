@@ -162,21 +162,23 @@ int X2FilterWheel::execModalSettingsDialog()
 
     //Retreive values from the user interface
     if (bPressedOK) {
-        Xagyl.getCurrentSlot(tmpSlot);
-        if(tmpSlot != curSlot) {
-            // move back to curSlot as this is what TheSkyX think is selected
-            Xagyl.moveToFilterIndex(curSlot);
-            do {
-                Xagyl.isMoveToComplete(filterChangeCompleted);
-                if(filterChangeCompleted)
-                    break; // no need to pause there :)
-                m_pSleeper->sleep(1000);
-                timeout++;
-                if (timeout > MAX_FILTER_CHANGE_TIMEOUT)
-                    break;
-            } while (!filterChangeCompleted);
+        if(m_bLinked) {
+            Xagyl.getCurrentSlot(tmpSlot);
+            if(tmpSlot != curSlot) {
+                // move back to curSlot as this is what TheSkyX think is selected
+                Xagyl.moveToFilterIndex(curSlot);
+                do {
+                    Xagyl.isMoveToComplete(filterChangeCompleted);
+                    if(filterChangeCompleted)
+                        break; // no need to pause there :)
+                    m_pSleeper->sleep(1000);
+                    timeout++;
+                    if (timeout > MAX_FILTER_CHANGE_TIMEOUT)
+                        break;
+                } while (!filterChangeCompleted);
+            }
+            
         }
-
     }
 
     return nErr;
@@ -468,7 +470,8 @@ int	X2FilterWheel::filterCount(int& nCount)
 int	X2FilterWheel::defaultFilterName(const int& nIndex, BasicStringInterface& strFilterNameOut)
 {
 	X2MutexLocker ml(GetMutex());
-	return ERR_NOT_IMPL;
+	strFilterNameOut = "";
+	return SB_OK;
 }
 
 int	X2FilterWheel::startFilterWheelMoveTo(const int& nTargetPosition)
