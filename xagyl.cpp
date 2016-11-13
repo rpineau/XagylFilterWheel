@@ -521,6 +521,8 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
     int nbDec;
     int nbInc;
     int i;
+    int retSpeed;
+    int rc;
 
     char cmd[SERIAL_BUFFER_SIZE];
     char resp[SERIAL_BUFFER_SIZE];
@@ -548,6 +550,18 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
     err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
     if(err)
         return err;
+    rc = sscanf(resp, "MaxSpeed %d", &retSpeed);
+    if(rc == 0)
+        return XA_COMMAND_FAILED;
+
+    if(filterWheelParams.rotationSpeed != retSpeed) {
+        // FW 4.2 and up has speed between 0 and 0xF instead of 0 to 0xA, so we're trying to approximate as the steps are the 6.66 and not 10 anymore
+        snprintf(cmd,SERIAL_BUFFER_SIZE, "S%X", (int)( ( (filterWheelParams.rotationSpeed/100.0f) *15)+ 0.5));
+        err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
+        if(err)
+            return err;
+        printf("FW 4.2 resp = %s\n", resp);
+    }
 
     if(mWheelParams.jitter > filterWheelParams.jitter) {
         nbDec = (mWheelParams.jitter - filterWheelParams.jitter);
