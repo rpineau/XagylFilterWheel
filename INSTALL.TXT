@@ -1,0 +1,5 @@
+Install :
+Copy the  'filterwheellist xagyl.txt' file to the "Common/Miscellaneous Files" directory inside of TheSkyX Pro.
+Copy libXagylFilterWheel.dll, NexDome.png and NexDome.ui to the "Common/PlugIns/FilterWheelPlugIns" directory inside of TheSkyX Pro.
+
+
