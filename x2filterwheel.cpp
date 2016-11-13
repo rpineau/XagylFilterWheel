@@ -390,7 +390,7 @@ bool X2FilterWheel::isLinked(void) const
 {
     X2FilterWheel* pMe = (X2FilterWheel*)this;
     X2MutexLocker ml(pMe->GetMutex());
-    return m_bLinked;
+    return pMe->m_bLinked;
 }
 
 bool X2FilterWheel::isEstablishLinkAbortable(void) const	{

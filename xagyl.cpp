@@ -149,7 +149,7 @@ int CXagyl::readResponse(char *respBuffer, int bufferLen)
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] totalBytesRead = %lu\n",totalBytesRead);
             mLogger->out(mLogBuffer);
         }
-    } while (*bufPtr++ != 0xA && totalBytesRead < bufferLen );
+    } while (*bufPtr++ != 0xA && totalBytesRead < (unsigned long)bufferLen );
 
     *(bufPtr-2) = 0; //remove the 0xD
     *(bufPtr-1) = 0; //remove the 0xA
@@ -721,14 +721,14 @@ int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
 void CXagyl::convertFirmwareToFloat(char *mfirmwareVersion)
 {
     bool firstDot;
-    size_t len;
+    int len;
     int i;
     int n;
     char buf[SERIAL_BUFFER_SIZE];
 
     memset(buf,0,SERIAL_BUFFER_SIZE);
 
-    len = strlen(mfirmwareVersion);
+    len = (int)strlen(mfirmwareVersion);
     // first remove all extra '.'
     n = 0;
     firstDot = true;
@@ -742,7 +742,7 @@ void CXagyl::convertFirmwareToFloat(char *mfirmwareVersion)
         }
     }
     // convert to float.
-    mFloatFirmwareVersion = atof(buf);
+    mFloatFirmwareVersion = (float)atof(buf);
 }
 
 void CXagyl::hexdump(unsigned char* inputData, unsigned char *outBuffer, int size)

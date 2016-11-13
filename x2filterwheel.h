@@ -173,7 +173,7 @@ private:
 	TickCountInterface*					m_pTickCount;
 
     CXagyl                              Xagyl;
-    int                                 m_bLinked;
+    bool                                m_bLinked;
     int                                 mWheelState; // use in the Settings dialog only.
     bool                                mUiEnabled;
     bool                                mResetingDefault;
