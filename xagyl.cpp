@@ -479,7 +479,7 @@ int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
     if(err)
         return err;
 
-    rc = sscanf(resp, "Pulse Width %duS", &filterWheelParams.pulseWidth);
+    rc = sscanf(resp, "Pulse Width %dmS", &filterWheelParams.pulseWidth);
     if(rc == 0) {
         filterWheelParams.pulseWidth = 0;
         return XA_COMMAND_FAILED;
@@ -527,7 +527,7 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
 
     if(hasPulseWidthControl()) {
         if(mWheelParams.pulseWidth > filterWheelParams.pulseWidth) {
-            nbDec = (mWheelParams.pulseWidth - filterWheelParams.pulseWidth)/100;
+            nbDec = (mWheelParams.pulseWidth - filterWheelParams.pulseWidth);
             for(i = 0; i < nbDec; i++) {
                 err = filterWheelCommand("N0", resp, SERIAL_BUFFER_SIZE);
                 if(err)
@@ -535,7 +535,7 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
             }
         }
         else if (mWheelParams.pulseWidth < filterWheelParams.pulseWidth) {
-            nbInc = (filterWheelParams.pulseWidth - mWheelParams.pulseWidth)/100;
+            nbInc = (filterWheelParams.pulseWidth - mWheelParams.pulseWidth);
             for(i = 0; i < nbInc; i++) {
                 err = filterWheelCommand("M0", resp, SERIAL_BUFFER_SIZE);
                 if(err)
