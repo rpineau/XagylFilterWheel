@@ -60,6 +60,8 @@ int CXagyl::Connect(const char *szPort)
         snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got Firmware.\n");
         mLogger->out(mLogBuffer);
     }
+    // convert it to a float for testing
+    convertFirmwareToFloat(mfirmwareVersion);
 
     // get the number of slots
     err = getNumbersOfSlots(mNbSlot);
@@ -220,6 +222,7 @@ int CXagyl::getFirmwareVersion(char *version, int strMaxLen)
         return err;
     }
     strncpy(version, resp, strMaxLen);
+
     return err;
 }
 
@@ -306,12 +309,12 @@ int CXagyl::isMoveToComplete(bool &complete)
     }
 
     // firmare 3.3.x is non responsive durring movement so we need to wait until there is something to read.
-    if(strstr(mfirmwareVersion,"3.3")) {
+    if(mFloatFirmwareVersion <= 3.4) {
         pSerx->bytesWaitingRx(nbWaitingByte);
         if (nbWaitingByte) {
             now = time(NULL);
             if(!complete && ((now - mStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
-                mTargetFilterSlot = filterSlot; // to stop the queries
+                mTargetFilterSlot = mCurentFilterSlot; // to stop the queries
                 return XA_COMMAND_FAILED;
             }
         }
@@ -574,7 +577,6 @@ int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
         err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
         if(err)
             return err;
-        printf("FW 4.2 resp = %s\n", resp);
     }
 
     if(mWheelParams.jitter > filterWheelParams.jitter) {
@@ -665,7 +667,7 @@ int CXagyl::resetAllToDefault(bool &needCal)
     char resp[SERIAL_BUFFER_SIZE];
     needCal = false;
     
-    if(strstr(mfirmwareVersion,"4.2")) {
+    if(mFloatFirmwareVersion >= 4.2) {
         // try R7 if available
         snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", 7);
         err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
@@ -716,6 +718,32 @@ int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
 }
 
 
+void CXagyl::convertFirmwareToFloat(char *mfirmwareVersion)
+{
+    bool firstDot;
+    size_t len;
+    int i;
+    int n;
+    char buf[SERIAL_BUFFER_SIZE];
+
+    memset(buf,0,SERIAL_BUFFER_SIZE);
+
+    len = strlen(mfirmwareVersion);
+    // first remove all extra '.'
+    n = 0;
+    firstDot = true;
+    for(i=0;i<len;i++) {
+        if(mfirmwareVersion[i] != '.') {
+            buf[n++] = mfirmwareVersion[i];
+        }
+        else if (firstDot) {
+            buf[n++] = mfirmwareVersion[i];
+            firstDot = false;
+        }
+    }
+    // convert to float.
+    mFloatFirmwareVersion = atof(buf);
+}
 
 void CXagyl::hexdump(unsigned char* inputData, unsigned char *outBuffer, int size)
 {

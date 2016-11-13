@@ -96,6 +96,8 @@ protected:
     bool            bDebugLog;
 
     char            mfirmwareVersion[SERIAL_BUFFER_SIZE];
+    float           mFloatFirmwareVersion;
+
     char            mLogBuffer[LOG_BUFFER_SIZE];
 
     bool            bCalibrating;
@@ -108,6 +110,7 @@ protected:
     wheel_params    mWheelParams;
 
     int             getNumbersOfSlotsFromDevice(int &nbSlots);
+    void            convertFirmwareToFloat(char *mfirmwareVersion);
 
     void            hexdump(unsigned char* inputData, unsigned char *outBuffer, int size);
 

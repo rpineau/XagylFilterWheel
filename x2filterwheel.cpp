@@ -170,7 +170,7 @@ int X2FilterWheel::execModalSettingsDialog()
                 Xagyl.isMoveToComplete(filterChangeCompleted);
                 if(filterChangeCompleted)
                     break; // no need to pause there :)
-                sleep(1);
+                m_pSleeper->sleep(1000);
                 timeout++;
                 if (timeout > MAX_FILTER_CHANGE_TIMEOUT)
                     break;
@@ -199,7 +199,7 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     // on_pushButton_4_clicked -> reset all to default
 
     // the test for mUiEnabled is done because even if the UI is not displayed we get events on the comboBox changes when we fill it.
-    if(!m_bLinked or !mUiEnabled)
+    if(!m_bLinked | !mUiEnabled)
         return;
 
     switch(mWheelState)  {
