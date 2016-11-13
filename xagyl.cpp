@@ -297,12 +297,26 @@ int CXagyl::isMoveToComplete(bool &complete)
     int filterSlot;
     char resp[SERIAL_BUFFER_SIZE];
     time_t  now;
+    int nbWaitingByte;
 
     complete = false;
     if(mCurentFilterSlot == mTargetFilterSlot) {
         complete = true;
         return err;
     }
+
+    // firmare 3.3.x is non responsive durring movement so we need to wait until there is something to read.
+    if(strstr(mfirmwareVersion,"3.3")) {
+        pSerx->bytesWaitingRx(nbWaitingByte);
+        if (nbWaitingByte) {
+            now = time(NULL);
+            if(!complete && ((now - mStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
+                mTargetFilterSlot = filterSlot; // to stop the queries
+                return XA_COMMAND_FAILED;
+            }
+        }
+    }
+
     err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
     if(err) {
         return err;
