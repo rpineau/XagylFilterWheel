@@ -85,7 +85,7 @@ public:
     int             startCalibration();
     int             isCalibrationComplete(bool &complete);
     
-    int             resetAllToDefault();
+    int             resetAllToDefault(bool &needCal);
     bool            hasPulseWidthControl();
 
 protected:
@@ -95,7 +95,7 @@ protected:
     bool            bIsConnected;
     bool            bDebugLog;
 
-    char            firmwareVersion[SERIAL_BUFFER_SIZE];
+    char            mfirmwareVersion[SERIAL_BUFFER_SIZE];
     char            mLogBuffer[LOG_BUFFER_SIZE];
 
     bool            bCalibrating;

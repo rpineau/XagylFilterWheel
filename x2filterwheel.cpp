@@ -188,6 +188,7 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     int filterCombBoxIndex;
     bool filterChangeCompleted;
     bool calibrationComplete;
+    bool resetDefaultNeedsCal;
     wheel_params filterWheelParams;
     filter_params filterParams;
 
@@ -206,6 +207,7 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
             // are we done moving ?
             Xagyl.isMoveToComplete(filterChangeCompleted);
             if(filterChangeCompleted) {
+                printf("filter change complete\n");
                 mWheelState = IDLE;
                 enableFilterControls(uiex, true);
                 // update filter data
@@ -219,8 +221,18 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
                 return;
             if(calibrationComplete) {
                 mWheelState = MOVING;
-                enableWheelControls(uiex, false);
+                enableWheelControls(uiex, true);
                 uiex->setText("pushButton", "Calibrate");
+                if(mResetingDefault) {
+                    Xagyl.getFilterWheelParams(filterWheelParams);
+                    if(Xagyl.hasPulseWidthControl()) {
+                        uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+                    }
+                    uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
+                    uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
+                    uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
+                    mResetingDefault = false;
+                }
             }
             break;
 
@@ -265,51 +277,60 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     }
 
     else if (!strcmp(pszEvent, "on_pushButton_4_clicked")) {
-        err = Xagyl.resetAllToDefault();
-        updateFilterControls(uiex);
-        Xagyl.getFilterWheelParams(filterWheelParams);
-        if(Xagyl.hasPulseWidthControl()) {
-            uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+        err = Xagyl.resetAllToDefault(resetDefaultNeedsCal);
+        if(resetDefaultNeedsCal) {
+            printf("Resest to default is calibrating\n");
+            mResetingDefault = true;
+            mWheelState = CALIBRATING;
+            enableFilterControls(uiex, false);
+            enableWheelControls(uiex, false);
+            uiex->setText("pushButton", "Calibrating");
         }
-        uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
-        uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
-        uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
+        else {
+            mWheelState = IDLE;
+            updateFilterControls(uiex);
+            Xagyl.getFilterWheelParams(filterWheelParams);
+            if(Xagyl.hasPulseWidthControl()) {
+                uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+            }
+            uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
+            uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
+            uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
+        }
     }
 }
 
 void X2FilterWheel::enableFilterControls(X2GUIExchangeInterface* dx, bool enable) {
 
     if(enable) {
-        dx->setEnabled("pushButton",true);
-        if( Xagyl.hasPulseWidthControl())
-            dx->setEnabled("pulseWidth",true);
         dx->setEnabled("comboBox",true);
         dx->setEnabled("positionOffset",true);
-        dx->setEnabled("pushButton_4",true);
+        dx->setEnabled("pushButton_3",true);
     }
     else {
-        dx->setEnabled("pushButton",false);
-        if( Xagyl.hasPulseWidthControl())
-            dx->setEnabled("pulseWidth",false);
         dx->setEnabled("comboBox",false);
         dx->setEnabled("positionOffset",false);
         dx->setEnabled("pushButton_3",false);
-        dx->setEnabled("pushButton_4",false);
     }
 }
 
 void X2FilterWheel::enableWheelControls(X2GUIExchangeInterface* dx, bool enable)
 {
     if(enable) {
-        dx->setEnabled("pulseWidth",true);
+        dx->setEnabled("pushButton",true);
+        dx->setEnabled("pushButton_4",true);
+        if( Xagyl.hasPulseWidthControl())
+            dx->setEnabled("pulseWidth",true);
         dx->setEnabled("rotationSpeed",true);
         dx->setEnabled("jitter",true);
         dx->setEnabled("positionThreshold",true);
         dx->setEnabled("pushButton_2",true);
-        dx->setEnabled("pushButton_2",true);
     }
     else {
-        dx->setEnabled("pulseWidth",false);
+        dx->setEnabled("pushButton",false);
+        dx->setEnabled("pushButton_4",false);
+        if( Xagyl.hasPulseWidthControl())
+            dx->setEnabled("pulseWidth",false);
         dx->setEnabled("rotationSpeed",false);
         dx->setEnabled("jitter",false);
         dx->setEnabled("positionThreshold",false);

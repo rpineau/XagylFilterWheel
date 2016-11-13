@@ -45,7 +45,7 @@ int CXagyl::Connect(const char *szPort)
     }
 
     // if any of this fails we're not properly connected or there is a hardware issue.
-    err = getFirmwareVersion(firmwareVersion, SERIAL_BUFFER_SIZE);
+    err = getFirmwareVersion(mfirmwareVersion, SERIAL_BUFFER_SIZE);
     if(err) {
         if (bDebugLog) {
             snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting Firmware.\n");
@@ -643,13 +643,23 @@ int CXagyl::isCalibrationComplete(bool &complete)
 
 
 
-int CXagyl::resetAllToDefault()
+int CXagyl::resetAllToDefault(bool &needCal)
 {
     int err = XA_OK;
     int i;
     char cmd[SERIAL_BUFFER_SIZE];
     char resp[SERIAL_BUFFER_SIZE];
-
+    needCal = false;
+    
+    if(strstr(mfirmwareVersion,"4.2")) {
+        // try R7 if available
+        snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", 7);
+        err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
+        needCal = true;
+        return err;
+    }
+    
+    // Pre 4.3 firmware do not have the R7 command.
     for (i=2;i<6;i++){
         snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", i);
         err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);

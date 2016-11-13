@@ -176,5 +176,7 @@ private:
     int                                 m_bLinked;
     int                                 mWheelState; // use in the Settings dialog only.
     bool                                mUiEnabled;
+    bool                                mResetingDefault;
+    
 
 };
