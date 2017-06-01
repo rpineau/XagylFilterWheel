@@ -41,7 +41,7 @@ class TickCountInterface;
 #elif defined(SB_MAC_BUILD)
 #define DEF_PORT_NAME					"/dev/cu.KeySerial1"
 #elif defined(SB_LINUX_BUILD)
-#define DEF_PORT_NAME					"/dev/COM0"
+#define DEF_PORT_NAME					"/dev/ttyUSB0"
 #endif
 
 #define LOG_BUFFER_SIZE 256

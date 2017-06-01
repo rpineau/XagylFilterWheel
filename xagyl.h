@@ -55,9 +55,9 @@ public:
 
     int             Connect(const char *szPort);
     void            Disconnect(void);
-    bool            IsConnected(void) { return bIsConnected; }
+    bool            IsConnected(void) { return bIsConnected; };
 
-    void            SetSerxPointer(SerXInterface *p) { pSerx = p; }
+    void            SetSerxPointer(SerXInterface *p) { pSerx = p; };
     void            setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
 
     // filter wheel communication

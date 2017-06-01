@@ -118,7 +118,7 @@
 		936B76EC1DC16E03008D84A8 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0810;
+				LastUpgradeCheck = 0820;
 				ORGANIZATIONNAME = "RTI-Zone";
 				TargetAttributes = {
 					936B76F31DC16E03008D84A8 = {
