@@ -10,13 +10,13 @@
 
 CXagyl::CXagyl()
 {
-    bIsConnected = false;
-    bCalibrating = false;
-    mHasPulseWidthControl = false;
-    bDebugLog = false;
-    mCurentFilterSlot = -1;
-    mTargetFilterSlot = 0;
-    mNbSlot = 0;
+    m_bIsConnected = false;
+    m_bCalibrating = false;
+    m_bHasPulseWidthControl = false;
+    m_bDebugLog = false;
+    m_nCurentFilterSlot = -1;
+    m_nTargetFilterSlot = 0;
+    m_nNbSlot = 0;
 }
 
 CXagyl::~CXagyl()
@@ -26,254 +26,254 @@ CXagyl::~CXagyl()
 
 int CXagyl::Connect(const char *szPort)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     // 9600 8N1
-    if(pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
-        bIsConnected = true;
+    if(m_pSerx->open(szPort, 9600, SerXInterface::B_NOPARITY, "-DTR_CONTROL 1") == 0)
+        m_bIsConnected = true;
     else
-        bIsConnected = false;
+        m_bIsConnected = false;
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return ERR_COMMNOLINK;
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Connected.\n");
-        mLogger->out(mLogBuffer);
+    if (m_bDebugLog) {
+        snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Connected.\n");
+        m_pLogger->out(m_szLogBuffer);
 
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Getting Firmware.\n");
-        mLogger->out(mLogBuffer);
+        snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Getting Firmware.\n");
+        m_pLogger->out(m_szLogBuffer);
     }
 
     // if any of this fails we're not properly connected or there is a hardware issue.
-    err = getFirmwareVersion(mfirmwareVersion, SERIAL_BUFFER_SIZE);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting Firmware.\n");
-            mLogger->out(mLogBuffer);
+    nErr = getFirmwareVersion(m_szFirmwareVersion, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting Firmware.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        bIsConnected = false;
-        pSerx->close();
+        m_bIsConnected = false;
+        m_pSerx->close();
         return FIRMWARE_NOT_SUPPORTED;
     }
 
-    if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got Firmware.\n");
-        mLogger->out(mLogBuffer);
+    if (m_bDebugLog) {
+        snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got Firmware.\n");
+        m_pLogger->out(m_szLogBuffer);
     }
     // convert it to a float for testing
-    convertFirmwareToFloat(mfirmwareVersion);
+    convertFirmwareToFloat(m_szFirmwareVersion);
 
     // get the number of slots
-    err = getNumbersOfSlots(mNbSlot);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the number of available slots.\n");
-            mLogger->out(mLogBuffer);
+    nErr = getNumbersOfSlots(m_nNbSlot);
+    if(nErr) {
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting the number of available slots.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        bIsConnected = false;
-        pSerx->close();
+        m_bIsConnected = false;
+        m_pSerx->close();
         return ERR_CMDFAILED;
     }
-    if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got number of slots : %d.\n", mNbSlot);
-        mLogger->out(mLogBuffer);
+    if (m_bDebugLog) {
+        snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Got number of slots : %d.\n", m_nNbSlot);
+        m_pLogger->out(m_szLogBuffer);
     }
 
-    err = getFilterWheelParams(mWheelParams);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting filter wheel gobal params.\n");
-            mLogger->out(mLogBuffer);
+    nErr = getFilterWheelParams(m_WheelParams);
+    if(nErr) {
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[Xagyl::Connect] Error Getting filter wheel gobal params.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        bIsConnected = false;
-        pSerx->close();
+        m_bIsConnected = false;
+        m_pSerx->close();
         return ERR_CMDFAILED;
     }
 
     // set wheel to verbose mode
     // char resp[SERIAL_BUFFER_SIZE];
     // filterWheelCommand("V1", resp, SERIAL_BUFFER_SIZE);
-    return err;
+    return nErr;
 }
 
 
 
 void CXagyl::Disconnect()
 {
-    if(bIsConnected) {
-        pSerx->purgeTxRx();
-        pSerx->close();
+    if(m_bIsConnected) {
+        m_pSerx->purgeTxRx();
+        m_pSerx->close();
     }
-    bIsConnected = false;
+    m_bIsConnected = false;
 }
 
 
 #pragma mark - communication functions
-int CXagyl::readResponse(char *respBuffer, int bufferLen)
+int CXagyl::readResponse(char *szRespBuffer, int nBufferLen)
 {
-    int err = XA_OK;
-    unsigned long nBytesRead = 0;
-    unsigned long totalBytesRead = 0;
-    char *bufPtr;
+    int nErr = XA_OK;
+    unsigned long ulBytesRead = 0;
+    unsigned long ulTotalBytesRead = 0;
+    char *szBufPtr;
     
-    memset(respBuffer, 0, (size_t) bufferLen);
-    bufPtr = respBuffer;
+    memset(szRespBuffer, 0, (size_t) nBufferLen);
+    szBufPtr = szRespBuffer;
 
     do {
-        err = pSerx->readFile(bufPtr, 1, nBytesRead, MAX_TIMEOUT);
-        if(err) {
-            if (bDebugLog) {
-                snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] readFile error.\n");
-                mLogger->out(mLogBuffer);
+        nErr = m_pSerx->readFile(szBufPtr, 1, ulBytesRead, MAX_TIMEOUT);
+        if(nErr) {
+            if (m_bDebugLog) {
+                snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] readFile error.\n");
+                m_pLogger->out(m_szLogBuffer);
             }
-            return err;
+            return nErr;
         }
 
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] respBuffer = %s\n",respBuffer);
-            mLogger->out(mLogBuffer);
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] respBuffer = %s\n",szRespBuffer);
+            m_pLogger->out(m_szLogBuffer);
         }
 
-        if (nBytesRead !=1) {// timeout
-            if (bDebugLog) {
-                snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] readFile Timeout.\n");
-                mLogger->out(mLogBuffer);
+        if (ulBytesRead !=1) {// timeout
+            if (m_bDebugLog) {
+                snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] readFile Timeout.\n");
+                m_pLogger->out(m_szLogBuffer);
             }
-            err = XA_BAD_CMD_RESPONSE;
+            nErr = XA_BAD_CMD_RESPONSE;
             break;
         }
-        totalBytesRead += nBytesRead;
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] nBytesRead = %lu\n",nBytesRead);
-            mLogger->out(mLogBuffer);
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] totalBytesRead = %lu\n",totalBytesRead);
-            mLogger->out(mLogBuffer);
+        ulTotalBytesRead += ulBytesRead;
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] ulBytesRead = %lu\n",ulBytesRead);
+            m_pLogger->out(m_szLogBuffer);
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::readResponse] ulTotalBytesRead = %lu\n",ulTotalBytesRead);
+            m_pLogger->out(m_szLogBuffer);
         }
-    } while (*bufPtr++ != 0xA && totalBytesRead < (unsigned long)bufferLen );
+    } while (*szBufPtr++ != 0xA && ulTotalBytesRead < (unsigned long)nBufferLen );
 
-    *(bufPtr-2) = 0; //remove the 0xD
-    *(bufPtr-1) = 0; //remove the 0xA
-    return err;
+    *(szBufPtr-2) = 0; //remove the 0xD
+    *(szBufPtr-1) = 0; //remove the 0xA
+    return nErr;
 }
 
 
-int CXagyl::filterWheelCommand(const char *cmd, char *result, int resultMaxLen)
+int CXagyl::filterWheelCommand(const char *szCmd, char *szResult, int nResultMaxLen)
 {
-    int err = XA_OK;
-    char resp[SERIAL_BUFFER_SIZE];
-    unsigned long  nBytesWrite;
+    int nErr = XA_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
+    unsigned long  ulBytesWrite;
 
-    pSerx->purgeTxRx();
-    if (bDebugLog) {
-        snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Sending %s\n",cmd);
-        mLogger->out(mLogBuffer);
+    m_pSerx->purgeTxRx();
+    if (m_bDebugLog) {
+        snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Sending %s\n",szCmd);
+        m_pLogger->out(m_szLogBuffer);
     }
-    err = pSerx->writeFile((void *)cmd, strlen(cmd), nBytesWrite);
-    pSerx->flushTx();
+    nErr = m_pSerx->writeFile((void *)szCmd, strlen(szCmd), ulBytesWrite);
+    m_pSerx->flushTx();
 
     // printf("Command %s sent. wrote %lu bytes\n", cmd, nBytesWrite);
-    if(err){
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] writeFile error.\n");
-            mLogger->out(mLogBuffer);
+    if(nErr){
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] writeFile error.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        return err;
+        return nErr;
     }
 
-    if(result) {
+    if(szResult) {
         // read response
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Getting response.\n");
-            mLogger->out(mLogBuffer);
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] Getting response.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        err = readResponse(resp, SERIAL_BUFFER_SIZE);
-        if(err){
-            if (bDebugLog) {
-                snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] readResponse error.\n");
-                mLogger->out(mLogBuffer);
+        nErr = readResponse(szResp, SERIAL_BUFFER_SIZE);
+        if(nErr){
+            if (m_bDebugLog) {
+                snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::filterWheelCommand] readResponse error.\n");
+                m_pLogger->out(m_szLogBuffer);
             }
         }
         // printf("Got response : %s\n",resp);
-        strncpy(result, resp, resultMaxLen);
+        strncpy(szResult, szResp, nResultMaxLen);
     }
-    return err;
+    return nErr;
     
 }
 
 #pragma mark - Filter Wheel info commands
 
-int CXagyl::getFirmwareVersion(char *version, int strMaxLen)
+int CXagyl::getFirmwareVersion(char *szVersion, int nStrMaxLen)
 {
-    int err = 0;
-    char resp[SERIAL_BUFFER_SIZE];
+    int nErr = 0;
+    char szResp[SERIAL_BUFFER_SIZE];
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return XA_NOT_CONNECTED;
 
-    if(bCalibrating)
+    if(m_bCalibrating)
         return XA_OK;
 
-    err = filterWheelCommand("I1", resp, SERIAL_BUFFER_SIZE);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getFirmwareVersion] Error Getting response from filterWheelCommand.\n");
-            mLogger->out(mLogBuffer);
+    nErr = filterWheelCommand("I1", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getFirmwareVersion] Error Getting response from filterWheelCommand.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        return err;
+        return nErr;
     }
-    strncpy(version, resp, strMaxLen);
+    strncpy(szVersion, szResp, nStrMaxLen);
 
-    return err;
+    return nErr;
 }
 
-int CXagyl::getModel(char *model, int strMaxLen)
+int CXagyl::getModel(char *szModel, int nStrMaxLen)
 {
-    int err = 0;
-    char resp[SERIAL_BUFFER_SIZE];
+    int nErr = 0;
+    char szResp[SERIAL_BUFFER_SIZE];
 
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return XA_NOT_CONNECTED;
 
-    if(bCalibrating)
+    if(m_bCalibrating)
         return XA_OK;
 
-    err = filterWheelCommand("I0", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("I0", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
 
-    strncpy(model, resp, strMaxLen);
-    return err;
+    strncpy(szModel, szResp, nStrMaxLen);
+    return nErr;
 }
 
-int CXagyl::getSerialnumber(char *serialNumber, int strMaxLen)
+int CXagyl::getSerialnumber(char *szSerialNumber, int nStrMaxLen)
 {
-    int err = 0;
-    char resp[SERIAL_BUFFER_SIZE];
+    int nErr = 0;
+    char szResp[SERIAL_BUFFER_SIZE];
     
-    if(!bIsConnected)
+    if(!m_bIsConnected)
         return XA_NOT_CONNECTED;
     
-    if(bCalibrating)
+    if(m_bCalibrating)
         return XA_OK;
     
-    err = filterWheelCommand("I3", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("I3", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
     
-    strncpy(serialNumber, resp, strMaxLen);
-    return err;
+    strncpy(szSerialNumber, szResp, nStrMaxLen);
+    return nErr;
 }
 
 
-int CXagyl::getFilterCount(int &count)
+int CXagyl::getFilterCount(int &nCount)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     
-    if (bIsConnected)
-        err = getNumbersOfSlotsFromDevice(count);
+    if (m_bIsConnected)
+        nErr = getNumbersOfSlotsFromDevice(nCount);
     else
-        count = mNbSlot;
-    return err;
+        nCount = m_nNbSlot;
+    return nErr;
 }
 
 
@@ -281,74 +281,75 @@ int CXagyl::getFilterCount(int &count)
 
 int CXagyl::moveToFilterIndex(int nTargetPosition)
 {
-    int err = 0;
-    char cmd[SERIAL_BUFFER_SIZE];
-    snprintf(cmd,SERIAL_BUFFER_SIZE, "G%d", nTargetPosition);
-    err = filterWheelCommand(cmd, NULL, 0);
-    if(err)
-        return err;
-    mTargetFilterSlot = nTargetPosition;
-    mStartMoveTime = time(NULL);
-    return err;
+    int nErr = 0;
+    char szCmd[SERIAL_BUFFER_SIZE];
 
+    snprintf(szCmd,SERIAL_BUFFER_SIZE, "G%d", nTargetPosition);
+    nErr = filterWheelCommand(szCmd, NULL, 0);
+    if(nErr)
+        return nErr;
+
+    m_nTargetFilterSlot = nTargetPosition;
+    m_tStartMoveTime = time(NULL);
+    return nErr;
 }
 
-int CXagyl::isMoveToComplete(bool &complete)
+int CXagyl::isMoveToComplete(bool &bComplete)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int rc = 0;
-    int filterSlot;
-    char resp[SERIAL_BUFFER_SIZE];
-    time_t  now;
+    int nFilterSlot;
+    char szResp[SERIAL_BUFFER_SIZE];
+    time_t tNow;
     int nbWaitingByte;
 
-    complete = false;
-    if(mCurentFilterSlot == mTargetFilterSlot) {
-        complete = true;
-        return err;
+    bComplete = false;
+    if(m_nCurentFilterSlot == m_nTargetFilterSlot) {
+        bComplete = true;
+        return nErr;
     }
 
     // firmare 3.3.x is non responsive durring movement so we need to wait until there is something to read.
-    if(mFloatFirmwareVersion <= 3.4) {
-        pSerx->bytesWaitingRx(nbWaitingByte);
+    if(m_fFirmwareVersion <= 3.4) {
+        m_pSerx->bytesWaitingRx(nbWaitingByte);
         if (nbWaitingByte) {
-            now = time(NULL);
-            if(!complete && ((now - mStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
-                mTargetFilterSlot = mCurentFilterSlot; // to stop the queries
+            tNow = time(NULL);
+            if(!bComplete && ((tNow - m_tStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
+                m_nTargetFilterSlot = m_nCurentFilterSlot; // to stop the queries
                 return XA_COMMAND_FAILED;
             }
         }
     }
 
-    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
-    if(err) {
-        return err;
+    nErr = filterWheelCommand("I2", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+        return nErr;
     }
     // are we still moving ?
-    if(strstr(resp,"Moving")) {
+    if(strstr(szResp,"Moving")) {
         return XA_OK;
     }
     // check mTargetFilterIndex against current filter wheel position.
-    rc = sscanf(resp, "P%d", &filterSlot);
+    rc = sscanf(szResp, "P%d", &nFilterSlot);
     if(rc == 0) {
         return XA_OK; // this is fine as this mean we got some other response and we can ignore it as the next call will catch the proper I2 response
     }
 
-    if (mTargetFilterSlot == 0)
-        mTargetFilterSlot = filterSlot;
+    if (m_nTargetFilterSlot == 0)
+        m_nTargetFilterSlot = nFilterSlot;
 
-    if(filterSlot == mTargetFilterSlot) {
-        complete = true;
-        mCurentFilterSlot = filterSlot;
+    if(nFilterSlot == m_nTargetFilterSlot) {
+        bComplete = true;
+        m_nCurentFilterSlot = nFilterSlot;
     }
-    now = time(NULL);
-    if(!complete && ((now - mStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
-        mTargetFilterSlot = filterSlot; // to stop the queries
+    tNow = time(NULL);
+    if(!bComplete && ((tNow - m_tStartMoveTime) > MAX_FILTER_CHANGE_TIMEOUT)) {
+        m_nTargetFilterSlot = nFilterSlot; // to stop the queries
         
         return XA_COMMAND_FAILED;
     }
 
-    return err;
+    return nErr;
 }
 
 #pragma mark - Filter Wheel config commands
@@ -357,61 +358,62 @@ int CXagyl::isMoveToComplete(bool &complete)
 
 #pragma mark - filters and device params functions
 
-int CXagyl::getNumbersOfSlots(int &nbSlots)
+int CXagyl::getNumbersOfSlots(int &nNbSlots)
 {
-    int err = XA_OK;
-    if (bIsConnected) {
-        err = getNumbersOfSlotsFromDevice(mNbSlot);
+    int nErr = XA_OK;
+
+    if (m_bIsConnected) {
+        nErr = getNumbersOfSlotsFromDevice(m_nNbSlot);
     }
-    nbSlots = mNbSlot;
+    nNbSlots = m_nNbSlot;
     
-    return err;
+    return nErr;
 }
 
-int CXagyl::getCurrentSlot(int &slot)
+int CXagyl::getCurrentSlot(int &nSlot)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int rc = 0;
-    char resp[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
 
-    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
-    if(err) {
-        return err;
+    nErr = filterWheelCommand("I2", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+        return nErr;
     }
-    rc = sscanf(resp, "P%d", &slot);
+    rc = sscanf(szResp, "P%d", &nSlot);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
 
-    return err;
+    return nErr;
 }
 
 
-int CXagyl::getSlotParams(int slotNumber, filter_params &params)
+int CXagyl::getSlotParams(int nSlotNumber, filter_params &Params)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int rc = 0;
-    int slot;
-    char resp[SERIAL_BUFFER_SIZE];
-    char cmd[SERIAL_BUFFER_SIZE];
+    int nSlot;
+    char szResp[SERIAL_BUFFER_SIZE];
+    char szCmd[SERIAL_BUFFER_SIZE];
 
     // get current slot number
-    err = filterWheelCommand("I2", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-    rc = sscanf(resp, "P%d", &slot);
+    nErr = filterWheelCommand("I2", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+    rc = sscanf(szResp, "P%d", &nSlot);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
 
     // are we on the right slot ?
-    while (slotNumber != slot) {
+    while (nSlotNumber != nSlot) {
         // we need to move to the requested slot
-        snprintf(cmd,SERIAL_BUFFER_SIZE, "G%d", slotNumber);
-        err = filterWheelCommand(cmd, resp, 0);
-        if(err)
-            return err;
-        rc = sscanf(resp, "P%d", &slot);
+        snprintf(szCmd, SERIAL_BUFFER_SIZE, "G%d", nSlotNumber);
+        nErr = filterWheelCommand(szCmd, szResp, 0);
+        if(nErr)
+            return nErr;
+        rc = sscanf(szResp, "P%d", &nSlot);
         if(rc == 0) {
             return XA_COMMAND_FAILED;
         }
@@ -419,343 +421,338 @@ int CXagyl::getSlotParams(int slotNumber, filter_params &params)
     }
 
     // get position offset of current filter
-    err = filterWheelCommand("I6", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("I6", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
 
-    rc = sscanf(resp, "P%d Offset %d", &slot, &params.offset);
+    rc = sscanf(szResp, "P%d Offset %d", &nSlot, &Params.offset);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
 
     // get sensors LL and RR of current filter.
-    err = filterWheelCommand("T0", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("T0", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
 
-    rc = sscanf(resp, "Sensors %d %d", &params.LL, &params.RR);
+    rc = sscanf(szResp, "Sensors %d %d", &Params.LL, &Params.RR);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
 
-    return err;
+    return nErr;
 }
 
-int CXagyl::setSlotParams(int slotNumber, int offset)
+int CXagyl::setSlotParams(int nSlotNumber, int nOffset)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int i;
-    filter_params params;
+    filter_params Params;
     int nbDec;
     int nbInc;
 
     char resp[SERIAL_BUFFER_SIZE];
 
     // get slot params, this will move the the right slot if needed
-    getSlotParams(slotNumber, params);
+    getSlotParams(nSlotNumber, Params);
 
     // set position offset
-    if(params.offset > offset) {
-        nbDec = (params.offset - offset);
+    if(Params.offset > nOffset) {
+        nbDec = (Params.offset - nOffset);
         for(i = 0; i < nbDec; i++) {
-            err = filterWheelCommand(")0", resp, SERIAL_BUFFER_SIZE);
-            if(err)
-                return err;
+            nErr = filterWheelCommand(")0", resp, SERIAL_BUFFER_SIZE);
+            if(nErr)
+                return nErr;
         }
     }
-    else if (params.offset < offset) {
-        nbInc = (offset - params.offset);
+    else if (Params.offset < nOffset) {
+        nbInc = (nOffset - Params.offset);
         for(i = 0; i < nbInc; i++) {
-            err = filterWheelCommand("(0", resp, SERIAL_BUFFER_SIZE);
-            if(err)
-                return err;
+            nErr = filterWheelCommand("(0", resp, SERIAL_BUFFER_SIZE);
+            if(nErr)
+                return nErr;
         }
     }
-
-
-
-    return err;
+    return nErr;
 }
 
-int CXagyl::getFilterWheelParams(wheel_params &filterWheelParams)
+int CXagyl::getFilterWheelParams(wheel_params &FilterWheelParams)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int rc = 0;
-    char resp[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
 
-    err = filterWheelCommand("I5", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-    rc = sscanf(resp, "Jitter %d", &filterWheelParams.jitter );
+    nErr = filterWheelCommand("I5", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+    rc = sscanf(szResp, "Jitter %d", &FilterWheelParams.jitter );
     if(rc == 0) {
-        filterWheelParams.jitter = 1;
+        FilterWheelParams.jitter = 1;
         return XA_COMMAND_FAILED;
     }
 
-    err = filterWheelCommand("I9", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("I9", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
 
-    rc = sscanf(resp, "Pulse Width %dmS", &filterWheelParams.pulseWidth);
+    rc = sscanf(szResp, "Pulse Width %dmS", &FilterWheelParams.pulseWidth);
     if(rc == 0) {
-        filterWheelParams.pulseWidth = 0;
+        FilterWheelParams.pulseWidth = 0;
         return XA_COMMAND_FAILED;
     }
 
-    if(filterWheelParams.pulseWidth == 0){
+    if(FilterWheelParams.pulseWidth == 0){
         // no pulse width control.
-        mHasPulseWidthControl = false;
+        m_bHasPulseWidthControl = false;
     }
     else {
-        mHasPulseWidthControl = true;
+        m_bHasPulseWidthControl = true;
     }
 
-    err = filterWheelCommand("I4", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-    rc = sscanf(resp, "MaxSpeed %d", &filterWheelParams.rotationSpeed );
+    nErr = filterWheelCommand("I4", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+    rc = sscanf(szResp, "MaxSpeed %d", &FilterWheelParams.rotationSpeed );
     if(rc == 0) {
-        filterWheelParams.rotationSpeed = 100;
+        FilterWheelParams.rotationSpeed = 100;
         return XA_COMMAND_FAILED;
     }
 
     // get position threshiold of current filter.
-    err = filterWheelCommand("I7", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("I7", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
 
-    rc = sscanf(resp, "Threshold %d", &filterWheelParams.threshold);
+    rc = sscanf(szResp, "Threshold %d", &FilterWheelParams.threshold);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
 
-    return err;
+    return nErr;
 }
 
-int CXagyl::setFilterWheelParams(wheel_params filterWheelParams)
+int CXagyl::setFilterWheelParams(wheel_params FilterWheelParams)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int nbDec;
     int nbInc;
     int i;
-    int retSpeed;
+    int nRotSpeed;
     int rc;
-
-    char cmd[SERIAL_BUFFER_SIZE];
-    char resp[SERIAL_BUFFER_SIZE];
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
 
     if(hasPulseWidthControl()) {
-        if(mWheelParams.pulseWidth > filterWheelParams.pulseWidth) {
-            nbDec = (mWheelParams.pulseWidth - filterWheelParams.pulseWidth);
+        if(m_WheelParams.pulseWidth > FilterWheelParams.pulseWidth) {
+            nbDec = (m_WheelParams.pulseWidth - FilterWheelParams.pulseWidth);
             for(i = 0; i < nbDec; i++) {
-                err = filterWheelCommand("N0", resp, SERIAL_BUFFER_SIZE);
-                if(err)
-                    return err;
+                nErr = filterWheelCommand("N0", szResp, SERIAL_BUFFER_SIZE);
+                if(nErr)
+                    return nErr;
             }
         }
-        else if (mWheelParams.pulseWidth < filterWheelParams.pulseWidth) {
-            nbInc = (filterWheelParams.pulseWidth - mWheelParams.pulseWidth);
+        else if (m_WheelParams.pulseWidth < FilterWheelParams.pulseWidth) {
+            nbInc = (FilterWheelParams.pulseWidth - m_WheelParams.pulseWidth);
             for(i = 0; i < nbInc; i++) {
-                err = filterWheelCommand("M0", resp, SERIAL_BUFFER_SIZE);
-                if(err)
-                    return err;
+                nErr = filterWheelCommand("M0", szResp, SERIAL_BUFFER_SIZE);
+                if(nErr)
+                    return nErr;
             }
         }
     }
 
-    snprintf(cmd,SERIAL_BUFFER_SIZE, "S%X", filterWheelParams.rotationSpeed/10);
-    err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
-    rc = sscanf(resp, "MaxSpeed %d", &retSpeed);
+    snprintf(szCmd,SERIAL_BUFFER_SIZE, "S%X", FilterWheelParams.rotationSpeed/10);
+    nErr = filterWheelCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
+    rc = sscanf(szResp, "MaxSpeed %d", &nRotSpeed);
     if(rc == 0)
         return XA_COMMAND_FAILED;
 
-    if(filterWheelParams.rotationSpeed != retSpeed) {
+    if(FilterWheelParams.rotationSpeed != nRotSpeed) {
         // FW 4.2 and up has speed between 0 and 0xF instead of 0 to 0xA, so we're trying to approximate as the steps are the 6.66 and not 10 anymore
-        snprintf(cmd,SERIAL_BUFFER_SIZE, "S%X", (int)( ( (filterWheelParams.rotationSpeed/100.0f) *15)+ 0.5));
-        err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
-        if(err)
-            return err;
+        snprintf(szCmd,SERIAL_BUFFER_SIZE, "S%X", (int)( ( (FilterWheelParams.rotationSpeed/100.0f) *15)+ 0.5));
+        nErr = filterWheelCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+        if(nErr)
+            return nErr;
     }
 
-    if(mWheelParams.jitter > filterWheelParams.jitter) {
-        nbDec = (mWheelParams.jitter - filterWheelParams.jitter);
+    if(m_WheelParams.jitter > FilterWheelParams.jitter) {
+        nbDec = (m_WheelParams.jitter - FilterWheelParams.jitter);
         for(i = 0; i < nbDec; i++) {
-            err = filterWheelCommand("[0", resp, SERIAL_BUFFER_SIZE);
-            if(err)
-                return err;
+            nErr = filterWheelCommand("[0", szResp, SERIAL_BUFFER_SIZE);
+            if(nErr)
+                return nErr;
         }
     }
-    else if (mWheelParams.jitter < filterWheelParams.jitter) {
-        nbInc = (filterWheelParams.jitter - mWheelParams.jitter);
+    else if (m_WheelParams.jitter < FilterWheelParams.jitter) {
+        nbInc = (FilterWheelParams.jitter - m_WheelParams.jitter);
         for(i = 0; i < nbInc; i++) {
-            err = filterWheelCommand("]0", resp, SERIAL_BUFFER_SIZE);
-            if(err)
-                return err;
+            nErr = filterWheelCommand("]0", szResp, SERIAL_BUFFER_SIZE);
+            if(nErr)
+                return nErr;
         }
     }
 
     // set Threshold
-    if(mWheelParams.threshold > filterWheelParams.threshold) {
-        nbDec = (mWheelParams.threshold - filterWheelParams.threshold);
+    if(m_WheelParams.threshold > FilterWheelParams.threshold) {
+        nbDec = (m_WheelParams.threshold - FilterWheelParams.threshold);
         for(i = 0; i < nbDec; i++) {
-            err = filterWheelCommand("{0", resp, SERIAL_BUFFER_SIZE);
-            if(err)
-                return err;
+            nErr = filterWheelCommand("{0", szResp, SERIAL_BUFFER_SIZE);
+            if(nErr)
+                return nErr;
         }
     }
-    else if (mWheelParams.threshold < filterWheelParams.threshold) {
-        nbInc = (filterWheelParams.threshold - mWheelParams.threshold);
+    else if (m_WheelParams.threshold < FilterWheelParams.threshold) {
+        nbInc = (FilterWheelParams.threshold - m_WheelParams.threshold);
         for(i = 0; i < nbInc; i++) {
-            err = filterWheelCommand("}0", resp, SERIAL_BUFFER_SIZE);
-            if(err)
-                return err;
+            nErr = filterWheelCommand("}0", szResp, SERIAL_BUFFER_SIZE);
+            if(nErr)
+                return nErr;
         }
     }
-
     // update internal params structure
-    getFilterWheelParams(mWheelParams);
-    return err;
+    getFilterWheelParams(m_WheelParams);
+    return nErr;
 }
 
 
 int CXagyl::startCalibration()
 {
-    int err = XA_OK;
-    char resp[SERIAL_BUFFER_SIZE];
+    int nErr = XA_OK;
+    char szResp[SERIAL_BUFFER_SIZE];
 
-    err = filterWheelCommand("R6", resp, SERIAL_BUFFER_SIZE);
-    if(err)
-        return err;
+    nErr = filterWheelCommand("R6", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr)
+        return nErr;
     
-    if(!strstr(resp,"Calibrating"))
-        err = XA_COMMAND_FAILED;
+    if(!strstr(szResp,"Calibrating"))
+        nErr = XA_COMMAND_FAILED;
     
-    return err;
+    return nErr;
 }
 
-int CXagyl::isCalibrationComplete(bool &complete)
+int CXagyl::isCalibrationComplete(bool &bComplete)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int nbWaitingByte;
-    char resp[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
     
-    complete = false;
+    bComplete = false;
     
     // do we have any data waiting ?
-    pSerx->bytesWaitingRx(nbWaitingByte);
+    m_pSerx->bytesWaitingRx(nbWaitingByte);
     if (nbWaitingByte) {
-        err = readResponse(resp, SERIAL_BUFFER_SIZE);
-        if(err)
-            return err;
-        if(strstr(resp,"Done")) {
-            complete = true;
-            mCurentFilterSlot = 1; // calibration send us back to filter 1
+        nErr = readResponse(szResp, SERIAL_BUFFER_SIZE);
+        if(nErr)
+            return nErr;
+        if(strstr(szResp,"Done")) {
+            bComplete = true;
+            m_nCurentFilterSlot = 1; // calibration send us back to filter 1
         }
     }
-    return err;
+    return nErr;
 }
 
 
-
-int CXagyl::resetAllToDefault(bool &needCal)
+int CXagyl::resetAllToDefault(bool &bNeedCal)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int i;
-    char cmd[SERIAL_BUFFER_SIZE];
-    char resp[SERIAL_BUFFER_SIZE];
-    needCal = false;
-    
-    if(mFloatFirmwareVersion >= 4.2) {
+    char szCmd[SERIAL_BUFFER_SIZE];
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    bNeedCal = false;
+    if(m_fFirmwareVersion >= 4.2) {
         // try R7 if available
-        snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", 7);
-        err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
-        needCal = true;
-        return err;
+        snprintf(szCmd,SERIAL_BUFFER_SIZE, "R%X", 7);
+        nErr = filterWheelCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
+        bNeedCal = true;
+        return nErr;
     }
     
     // Pre 4.3 firmware do not have the R7 command.
     for (i=2;i<6;i++){
-        snprintf(cmd,SERIAL_BUFFER_SIZE, "R%X", i);
-        err = filterWheelCommand(cmd, resp, SERIAL_BUFFER_SIZE);
+        snprintf(szCmd,SERIAL_BUFFER_SIZE, "R%X", i);
+        nErr = filterWheelCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
         // we ignore the error for now.
     }
-    err = getFilterWheelParams(mWheelParams);
+    nErr = getFilterWheelParams(m_WheelParams);
 
-    return err;
+    return nErr;
 }
 
 bool CXagyl::hasPulseWidthControl()
 {
-    return mHasPulseWidthControl;
+    return m_bHasPulseWidthControl;
 }
 
 
-int CXagyl::getNumbersOfSlotsFromDevice(int &nbSlots)
+int CXagyl::getNumbersOfSlotsFromDevice(int &nNbSlots)
 {
-    int err = XA_OK;
+    int nErr = XA_OK;
     int rc = 0;
-    char resp[SERIAL_BUFFER_SIZE];
-    err = filterWheelCommand("I8", resp, SERIAL_BUFFER_SIZE);
-    if(err) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getNumbersOfSlotsFromDevice] Error Getting response from filterWheelCommand.\n");
-            mLogger->out(mLogBuffer);
+    char szResp[SERIAL_BUFFER_SIZE];
+
+    nErr = filterWheelCommand("I8", szResp, SERIAL_BUFFER_SIZE);
+    if(nErr) {
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getNumbersOfSlotsFromDevice] Error Getting response from filterWheelCommand.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        return err;
+        return nErr;
     }
     // FilterSlots X
-    rc = sscanf(resp, "FilterSlots %d", &nbSlots);
+    rc = sscanf(szResp, "FilterSlots %d", &nNbSlots);
     if(rc == 0) {
-        if (bDebugLog) {
-            snprintf(mLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getNumbersOfSlotsFromDevice] Error converting response.\n");
-            mLogger->out(mLogBuffer);
+        if (m_bDebugLog) {
+            snprintf(m_szLogBuffer,LOG_BUFFER_SIZE,"[CXagyl::getNumbersOfSlotsFromDevice] Error converting response.\n");
+            m_pLogger->out(m_szLogBuffer);
         }
-        err = XA_COMMAND_FAILED;
+        nErr = XA_COMMAND_FAILED;
     }
-    return err;
+    return nErr;
 }
 
 
-void CXagyl::convertFirmwareToFloat(char *mfirmwareVersion)
+void CXagyl::convertFirmwareToFloat(char *m_szFirmwareVersion)
 {
-    bool firstDot;
-    int len;
+    bool bFirstDot;
+    int nLen;
     int i;
     int n;
-    char buf[SERIAL_BUFFER_SIZE];
+    char szBuf[SERIAL_BUFFER_SIZE];
 
-    memset(buf,0,SERIAL_BUFFER_SIZE);
+    memset(szBuf,0,SERIAL_BUFFER_SIZE);
 
-    len = (int)strlen(mfirmwareVersion);
+    nLen = (int)strlen(m_szFirmwareVersion);
     // first remove all extra '.'
     n = 0;
-    firstDot = true;
-    for(i=0;i<len;i++) {
-        if(mfirmwareVersion[i] != '.') {
-            buf[n++] = mfirmwareVersion[i];
+    bFirstDot = true;
+    for(i=0;i<nLen;i++) {
+        if(m_szFirmwareVersion[i] != '.') {
+            szBuf[n++] = m_szFirmwareVersion[i];
         }
-        else if (firstDot) {
-            buf[n++] = mfirmwareVersion[i];
-            firstDot = false;
+        else if (bFirstDot) {
+            szBuf[n++] = m_szFirmwareVersion[i];
+            bFirstDot = false;
         }
     }
     // convert to float.
-    mFloatFirmwareVersion = (float)atof(buf);
+    m_fFirmwareVersion = (float)atof(szBuf);
 }
 
-void CXagyl::hexdump(unsigned char* inputData, unsigned char *outBuffer, int size)
+void CXagyl::hexdump(unsigned char* szInputData, unsigned char *szOutBuffer, int nSize)
 {
-    unsigned char *buf = outBuffer;
-    int idx=0;
-    memset(outBuffer,0,size);
-    for(idx=0; idx<size; idx++){
-        
-        snprintf((char *)buf,4,"%02X ", inputData[idx]);
-        buf+=3;
+    unsigned char *szBuf = szOutBuffer;
+    int nIdx=0;
+
+    memset(szOutBuffer,0,nSize);
+    for(nIdx=0; nIdx<nSize; nIdx++){
+        snprintf((char *)szBuf,4,"%02X ", szInputData[nIdx]);
+        szBuf+=3;
     }
-    *buf = 0;
+    *szBuf = 0;
 }
 
 

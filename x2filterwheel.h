@@ -172,11 +172,11 @@ private:
 	MutexInterface*						m_pIOMutex;
 	TickCountInterface*					m_pTickCount;
 
-    CXagyl                              Xagyl;
+    CXagyl                              m_Xagyl;
     bool                                m_bLinked;
-    int                                 mWheelState; // use in the Settings dialog only.
-    bool                                mUiEnabled;
-    bool                                mResetingDefault;
+    int                                 m_nWheelState; // use in the Settings dialog only.
+    bool                                m_bUiEnabled;
+    bool                                m_bResetingDefault;
     
 
 };
