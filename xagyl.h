@@ -35,16 +35,16 @@ enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD
 
 
 typedef struct {
-    int offset;
-    int LL;
-    int RR;
+    int nOffset;
+    int nLL;
+    int nRR;
 } filter_params;
 
 typedef struct {
-    int pulseWidth;
-    int jitter;
-    int rotationSpeed;
-    int threshold;
+    int nPulseWidth;
+    int nJitter;
+    int nRotationSpeed;
+    int nThreshold;
 } wheel_params;
 
 class CXagyl
@@ -61,31 +61,31 @@ public:
     void            setLogger(LoggerInterface *pLogger) { m_pLogger = pLogger; };
 
     // filter wheel communication
-    int             filterWheelCommand(const char *cmd, char *result, int resultMaxLen);
-    int             readResponse(char *respBuffer, int bufferLen);
+    int             filterWheelCommand(const char *szCmd, char *szResult, int nResultMaxLen);
+    int             readResponse(char *szRespBuffer, int nBufferLen);
 
     // Filter Wheel commands
-    int             getFirmwareVersion(char *version, int strMaxLen);
-    int             getModel(char *model, int strMaxLen);
-    int             getSerialnumber(char *serialNumber, int strMaxLen);
+    int             getFirmwareVersion(char *szVersion, int nStrMaxLen);
+    int             getModel(char *szModel, int nStrMaxLen);
+    int             getSerialnumber(char *szSerialNumber, int nStrMaxLen);
     int             getFilterCount(int &nCount);
 
     int             moveToFilterIndex(int nTargetPosition);
-    int             isMoveToComplete(bool &complete);
+    int             isMoveToComplete(bool &bComplete);
 
-    int             getNumbersOfSlots(int &nbSlots);
-    int             getCurrentSlot(int &slot);
+    int             getNumbersOfSlots(int &nNbSlots);
+    int             getCurrentSlot(int &nSlot);
 
-    int             getSlotParams(int slotNumber, filter_params &params);
-    int             setSlotParams(int slotNumber, int offset);
+    int             getSlotParams(int nSlotNumber, filter_params &Params);
+    int             setSlotParams(int nSlotNumber, int nOffset);
 
-    int             getFilterWheelParams(wheel_params &filterWheelParams);
-    int             setFilterWheelParams(wheel_params filterWheelParams);
+    int             getFilterWheelParams(wheel_params &FilterWheelParams);
+    int             setFilterWheelParams(wheel_params FilterWheelParams);
 
     int             startCalibration();
-    int             isCalibrationComplete(bool &complete);
+    int             isCalibrationComplete(bool &bComplete);
     
-    int             resetAllToDefault(bool &needCal);
+    int             resetAllToDefault(bool &bNeedCal);
     bool            hasPulseWidthControl();
 
 protected:

@@ -425,7 +425,7 @@ int CXagyl::getSlotParams(int nSlotNumber, filter_params &Params)
     if(nErr)
         return nErr;
 
-    rc = sscanf(szResp, "P%d Offset %d", &nSlot, &Params.offset);
+    rc = sscanf(szResp, "P%d Offset %d", &nSlot, &Params.nOffset);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
@@ -435,7 +435,7 @@ int CXagyl::getSlotParams(int nSlotNumber, filter_params &Params)
     if(nErr)
         return nErr;
 
-    rc = sscanf(szResp, "Sensors %d %d", &Params.LL, &Params.RR);
+    rc = sscanf(szResp, "Sensors %d %d", &Params.nLL, &Params.nRR);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
@@ -457,16 +457,16 @@ int CXagyl::setSlotParams(int nSlotNumber, int nOffset)
     getSlotParams(nSlotNumber, Params);
 
     // set position offset
-    if(Params.offset > nOffset) {
-        nbDec = (Params.offset - nOffset);
+    if(Params.nOffset > nOffset) {
+        nbDec = (Params.nOffset - nOffset);
         for(i = 0; i < nbDec; i++) {
             nErr = filterWheelCommand(")0", resp, SERIAL_BUFFER_SIZE);
             if(nErr)
                 return nErr;
         }
     }
-    else if (Params.offset < nOffset) {
-        nbInc = (nOffset - Params.offset);
+    else if (Params.nOffset < nOffset) {
+        nbInc = (nOffset - Params.nOffset);
         for(i = 0; i < nbInc; i++) {
             nErr = filterWheelCommand("(0", resp, SERIAL_BUFFER_SIZE);
             if(nErr)
@@ -485,9 +485,9 @@ int CXagyl::getFilterWheelParams(wheel_params &FilterWheelParams)
     nErr = filterWheelCommand("I5", szResp, SERIAL_BUFFER_SIZE);
     if(nErr)
         return nErr;
-    rc = sscanf(szResp, "Jitter %d", &FilterWheelParams.jitter );
+    rc = sscanf(szResp, "Jitter %d", &FilterWheelParams.nJitter );
     if(rc == 0) {
-        FilterWheelParams.jitter = 1;
+        FilterWheelParams.nJitter = 1;
         return XA_COMMAND_FAILED;
     }
 
@@ -495,13 +495,13 @@ int CXagyl::getFilterWheelParams(wheel_params &FilterWheelParams)
     if(nErr)
         return nErr;
 
-    rc = sscanf(szResp, "Pulse Width %dmS", &FilterWheelParams.pulseWidth);
+    rc = sscanf(szResp, "Pulse Width %dmS", &FilterWheelParams.nPulseWidth);
     if(rc == 0) {
-        FilterWheelParams.pulseWidth = 0;
+        FilterWheelParams.nPulseWidth = 0;
         return XA_COMMAND_FAILED;
     }
 
-    if(FilterWheelParams.pulseWidth == 0){
+    if(FilterWheelParams.nPulseWidth == 0){
         // no pulse width control.
         m_bHasPulseWidthControl = false;
     }
@@ -512,9 +512,9 @@ int CXagyl::getFilterWheelParams(wheel_params &FilterWheelParams)
     nErr = filterWheelCommand("I4", szResp, SERIAL_BUFFER_SIZE);
     if(nErr)
         return nErr;
-    rc = sscanf(szResp, "MaxSpeed %d", &FilterWheelParams.rotationSpeed );
+    rc = sscanf(szResp, "MaxSpeed %d", &FilterWheelParams.nRotationSpeed );
     if(rc == 0) {
-        FilterWheelParams.rotationSpeed = 100;
+        FilterWheelParams.nRotationSpeed = 100;
         return XA_COMMAND_FAILED;
     }
 
@@ -523,7 +523,7 @@ int CXagyl::getFilterWheelParams(wheel_params &FilterWheelParams)
     if(nErr)
         return nErr;
 
-    rc = sscanf(szResp, "Threshold %d", &FilterWheelParams.threshold);
+    rc = sscanf(szResp, "Threshold %d", &FilterWheelParams.nThreshold);
     if(rc == 0) {
         return XA_COMMAND_FAILED;
     }
@@ -543,16 +543,16 @@ int CXagyl::setFilterWheelParams(wheel_params FilterWheelParams)
     char szResp[SERIAL_BUFFER_SIZE];
 
     if(hasPulseWidthControl()) {
-        if(m_WheelParams.pulseWidth > FilterWheelParams.pulseWidth) {
-            nbDec = (m_WheelParams.pulseWidth - FilterWheelParams.pulseWidth);
+        if(m_WheelParams.nPulseWidth > FilterWheelParams.nPulseWidth) {
+            nbDec = (m_WheelParams.nPulseWidth - FilterWheelParams.nPulseWidth);
             for(i = 0; i < nbDec; i++) {
                 nErr = filterWheelCommand("N0", szResp, SERIAL_BUFFER_SIZE);
                 if(nErr)
                     return nErr;
             }
         }
-        else if (m_WheelParams.pulseWidth < FilterWheelParams.pulseWidth) {
-            nbInc = (FilterWheelParams.pulseWidth - m_WheelParams.pulseWidth);
+        else if (m_WheelParams.nPulseWidth < FilterWheelParams.nPulseWidth) {
+            nbInc = (FilterWheelParams.nPulseWidth - m_WheelParams.nPulseWidth);
             for(i = 0; i < nbInc; i++) {
                 nErr = filterWheelCommand("M0", szResp, SERIAL_BUFFER_SIZE);
                 if(nErr)
@@ -561,7 +561,7 @@ int CXagyl::setFilterWheelParams(wheel_params FilterWheelParams)
         }
     }
 
-    snprintf(szCmd,SERIAL_BUFFER_SIZE, "S%X", FilterWheelParams.rotationSpeed/10);
+    snprintf(szCmd,SERIAL_BUFFER_SIZE, "S%X", FilterWheelParams.nRotationSpeed/10);
     nErr = filterWheelCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
     if(nErr)
         return nErr;
@@ -569,24 +569,24 @@ int CXagyl::setFilterWheelParams(wheel_params FilterWheelParams)
     if(rc == 0)
         return XA_COMMAND_FAILED;
 
-    if(FilterWheelParams.rotationSpeed != nRotSpeed) {
+    if(FilterWheelParams.nRotationSpeed != nRotSpeed) {
         // FW 4.2 and up has speed between 0 and 0xF instead of 0 to 0xA, so we're trying to approximate as the steps are the 6.66 and not 10 anymore
-        snprintf(szCmd,SERIAL_BUFFER_SIZE, "S%X", (int)( ( (FilterWheelParams.rotationSpeed/100.0f) *15)+ 0.5));
+        snprintf(szCmd,SERIAL_BUFFER_SIZE, "S%X", (int)( ( (FilterWheelParams.nRotationSpeed/100.0f) *15)+ 0.5));
         nErr = filterWheelCommand(szCmd, szResp, SERIAL_BUFFER_SIZE);
         if(nErr)
             return nErr;
     }
 
-    if(m_WheelParams.jitter > FilterWheelParams.jitter) {
-        nbDec = (m_WheelParams.jitter - FilterWheelParams.jitter);
+    if(m_WheelParams.nJitter > FilterWheelParams.nJitter) {
+        nbDec = (m_WheelParams.nJitter - FilterWheelParams.nJitter);
         for(i = 0; i < nbDec; i++) {
             nErr = filterWheelCommand("[0", szResp, SERIAL_BUFFER_SIZE);
             if(nErr)
                 return nErr;
         }
     }
-    else if (m_WheelParams.jitter < FilterWheelParams.jitter) {
-        nbInc = (FilterWheelParams.jitter - m_WheelParams.jitter);
+    else if (m_WheelParams.nJitter < FilterWheelParams.nJitter) {
+        nbInc = (FilterWheelParams.nJitter - m_WheelParams.nJitter);
         for(i = 0; i < nbInc; i++) {
             nErr = filterWheelCommand("]0", szResp, SERIAL_BUFFER_SIZE);
             if(nErr)
@@ -595,16 +595,16 @@ int CXagyl::setFilterWheelParams(wheel_params FilterWheelParams)
     }
 
     // set Threshold
-    if(m_WheelParams.threshold > FilterWheelParams.threshold) {
-        nbDec = (m_WheelParams.threshold - FilterWheelParams.threshold);
+    if(m_WheelParams.nThreshold > FilterWheelParams.nThreshold) {
+        nbDec = (m_WheelParams.nThreshold - FilterWheelParams.nThreshold);
         for(i = 0; i < nbDec; i++) {
             nErr = filterWheelCommand("{0", szResp, SERIAL_BUFFER_SIZE);
             if(nErr)
                 return nErr;
         }
     }
-    else if (m_WheelParams.threshold < FilterWheelParams.threshold) {
-        nbInc = (FilterWheelParams.threshold - m_WheelParams.threshold);
+    else if (m_WheelParams.nThreshold < FilterWheelParams.nThreshold) {
+        nbInc = (FilterWheelParams.nThreshold - m_WheelParams.nThreshold);
         for(i = 0; i < nbInc; i++) {
             nErr = filterWheelCommand("}0", szResp, SERIAL_BUFFER_SIZE);
             if(nErr)
