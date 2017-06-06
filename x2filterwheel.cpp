@@ -21,9 +21,9 @@ X2FilterWheel::X2FilterWheel(const char* pszDriverSelection,
 	m_pTickCount					= pTickCount;
 
     m_bLinked = false;
-    mWheelState = IDLE;
-    Xagyl.SetSerxPointer(pSerX);
-    Xagyl.setLogger(pLogger);
+    m_nWheelState = IDLE;
+    m_Xagyl.SetSerxPointer(pSerX);
+    m_Xagyl.setLogger(pLogger);
 
 }
 
@@ -73,18 +73,18 @@ int X2FilterWheel::execModalSettingsDialog()
 {
     int nErr = SB_OK;
     int i = 0;
-    int nbSlots = 0;
-    char comboString[16];
+    int nNbSlots = 0;
+    char szComboString[16];
     X2ModalUIUtil uiutil(this, GetTheSkyXFacadeForDrivers());
     X2GUIInterface*					ui = uiutil.X2UI();
     X2GUIExchangeInterface*			dx = NULL;//Comes after ui is loaded
     bool bPressedOK = false;
-    char tmpBuf[SERIAL_BUFFER_SIZE];
-    wheel_params filterWheelParams;
-    int curSlot = 0;
-    int tmpSlot = 0;
-    int timeout = 0;
-    bool filterChangeCompleted;
+    char szTmpBuf[SERIAL_BUFFER_SIZE];
+    wheel_params FilterWheelParams;
+    int nCurSlot = 0;
+    int nTmpSlot = 0;
+    int nTimeout = 0;
+    bool bFilterChangeCompleted;
 
     if (NULL == ui)
         return ERR_POINTER;
@@ -95,22 +95,22 @@ int X2FilterWheel::execModalSettingsDialog()
     if (NULL == (dx = uiutil.X2DX()))
         return ERR_POINTER;
 
-    mUiEnabled = false;
+    m_bUiEnabled = false;
 
     //Intialize the user interface
     if(m_bLinked) {
         // get global filter wheel params
-        Xagyl.getFilterWheelParams(filterWheelParams);
-        Xagyl.getModel(tmpBuf,16);
-        dx->setPropertyString("model","text", tmpBuf);
-        Xagyl.getFirmwareVersion(tmpBuf,16);
-        dx->setPropertyString("firmware","text", tmpBuf);
-        Xagyl.getSerialnumber(tmpBuf,16);
-        dx->setPropertyString("serialNumber","text", tmpBuf);
+        m_Xagyl.getFilterWheelParams(FilterWheelParams);
+        m_Xagyl.getModel(szTmpBuf,16);
+        dx->setPropertyString("model","text", szTmpBuf);
+        m_Xagyl.getFirmwareVersion(szTmpBuf,16);
+        dx->setPropertyString("firmware","text", szTmpBuf);
+        m_Xagyl.getSerialnumber(szTmpBuf,16);
+        dx->setPropertyString("serialNumber","text", szTmpBuf);
 
-        if( Xagyl.hasPulseWidthControl()){
+        if( m_Xagyl.hasPulseWidthControl()){
             dx->setEnabled("label_3",true);
-            dx->setPropertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+            dx->setPropertyInt("pulseWidth", "value", FilterWheelParams.pulseWidth);
         }
         else{
             dx->setEnabled("label_3",false);
@@ -119,63 +119,63 @@ int X2FilterWheel::execModalSettingsDialog()
 
         enableWheelControls(dx, true);
         
-        dx->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
-        dx->setPropertyInt("jitter", "value", filterWheelParams.jitter);
-        dx->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
+        dx->setPropertyInt("rotationSpeed", "value", FilterWheelParams.rotationSpeed);
+        dx->setPropertyInt("jitter", "value", FilterWheelParams.jitter);
+        dx->setPropertyInt("positionThreshold", "value", FilterWheelParams.threshold);
 
         enableFilterControls(dx, true);
 
         //Populate the combo box and set the current index (selection)
         dx->invokeMethod("comboBox","clear");
-        Xagyl.getNumbersOfSlots(nbSlots);
-        for (i=0; i< nbSlots; i++){
-            snprintf(comboString, 16, "Slot %d", i+1);
-            dx->comboBoxAppendString("comboBox", comboString);
+        m_Xagyl.getNumbersOfSlots(nNbSlots);
+        for (i=0; i< nNbSlots; i++){
+            snprintf(szComboString, 16, "Slot %d", i+1);
+            dx->comboBoxAppendString("comboBox", szComboString);
             
         }
 
-        Xagyl.getCurrentSlot(curSlot); // we need it to restore the position after the settings are done.
+        m_Xagyl.getCurrentSlot(nCurSlot); // we need it to restore the position after the settings are done.
         updateFilterControls(dx);
-        mWheelState = IDLE;
+        m_nWheelState = IDLE;
 
     }
     else {
-        snprintf(tmpBuf,16,"NA");
-        dx->setPropertyString("model","text", tmpBuf);
-        dx->setPropertyString("firmware","text", tmpBuf);
-        dx->setPropertyString("serialNumber","text", tmpBuf);
+        snprintf(szTmpBuf,16,"NA");
+        dx->setPropertyString("model","text", szTmpBuf);
+        dx->setPropertyString("firmware","text", szTmpBuf);
+        dx->setPropertyString("serialNumber","text", szTmpBuf);
         dx->setEnabled("pushButton",false);
         
         enableWheelControls(dx, false);
         enableFilterControls(dx, false);
-        snprintf(tmpBuf,16,"Sensors -- --");
-        dx->setPropertyString("sensorValues","text", tmpBuf);
+        snprintf(szTmpBuf,16,"Sensors -- --");
+        dx->setPropertyString("sensorValues","text", szTmpBuf);
     }
 
     X2MutexLocker ml(GetMutex());
     
     //Display the user interface
-    mUiEnabled = true;
+    m_bUiEnabled = true;
     if ((nErr = ui->exec(bPressedOK)))
         return nErr;
-    mUiEnabled = false;
+    m_bUiEnabled = false;
 
     //Retreive values from the user interface
     if (bPressedOK) {
         if(m_bLinked) {
-            Xagyl.getCurrentSlot(tmpSlot);
-            if(tmpSlot != curSlot) {
-                // move back to curSlot as this is what TheSkyX think is selected
-                Xagyl.moveToFilterIndex(curSlot);
+            m_Xagyl.getCurrentSlot(nTmpSlot);
+            if(nTmpSlot != nCurSlot) {
+                // move back to nCurSlot as this is what TheSkyX think is selected
+                m_Xagyl.moveToFilterIndex(nCurSlot);
                 do {
-                    Xagyl.isMoveToComplete(filterChangeCompleted);
-                    if(filterChangeCompleted)
+                    m_Xagyl.isMoveToComplete(bFilterChangeCompleted);
+                    if(bFilterChangeCompleted)
                         break; // no need to pause there :)
                     m_pSleeper->sleep(1000);
-                    timeout++;
-                    if (timeout > MAX_FILTER_CHANGE_TIMEOUT)
+                    nTimeout++;
+                    if (nTimeout > MAX_FILTER_CHANGE_TIMEOUT)
                         break;
-                } while (!filterChangeCompleted);
+                } while (!bFilterChangeCompleted);
             }
             
         }
@@ -186,9 +186,9 @@ int X2FilterWheel::execModalSettingsDialog()
 
 void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
 {
-    int err = SB_OK;
+    int nErr = SB_OK;
     int filterCombBoxIndex;
-    bool filterChangeCompleted;
+    bool bFilterChangeCompleted;
     bool calibrationComplete;
     bool resetDefaultNeedsCal;
     wheel_params filterWheelParams;
@@ -200,17 +200,17 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     // on_pushButton_3_clicked -> apply filter slot changes
     // on_pushButton_4_clicked -> reset all to default
 
-    // the test for mUiEnabled is done because even if the UI is not displayed we get events on the comboBox changes when we fill it.
-    if(!m_bLinked | !mUiEnabled)
+    // the test for m_bUiEnabled is done because even if the UI is not displayed we get events on the comboBox changes when we fill it.
+    if(!m_bLinked | !m_bUiEnabled)
         return;
 
-    switch(mWheelState)  {
+    switch(m_nWheelState)  {
         case MOVING :
             // are we done moving ?
-            Xagyl.isMoveToComplete(filterChangeCompleted);
-            if(filterChangeCompleted) {
+            m_Xagyl.isMoveToComplete(bFilterChangeCompleted);
+            if(bFilterChangeCompleted) {
                 printf("filter change complete\n");
-                mWheelState = IDLE;
+                m_nWheelState = IDLE;
                 enableFilterControls(uiex, true);
                 // update filter data
                 updateFilterControls(uiex);
@@ -218,22 +218,22 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
             break;
 
         case CALIBRATING:
-            err = Xagyl.isCalibrationComplete(calibrationComplete);
-            if(err)
+            nErr = m_Xagyl.isCalibrationComplete(calibrationComplete);
+            if(nErr)
                 return;
             if(calibrationComplete) {
-                mWheelState = MOVING;
+                m_nWheelState = MOVING;
                 enableWheelControls(uiex, true);
                 uiex->setText("pushButton", "Calibrate");
-                if(mResetingDefault) {
-                    Xagyl.getFilterWheelParams(filterWheelParams);
-                    if(Xagyl.hasPulseWidthControl()) {
+                if(m_bResetingDefault) {
+                    m_Xagyl.getFilterWheelParams(filterWheelParams);
+                    if(m_Xagyl.hasPulseWidthControl()) {
                         uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
                     }
                     uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
                     uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
                     uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
-                    mResetingDefault = false;
+                    m_bResetingDefault = false;
                 }
             }
             break;
@@ -245,54 +245,57 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     
     // Calibrate
     if (!strcmp(pszEvent, "on_pushButton_clicked")) {
-        err = Xagyl.startCalibration();
-        if (err)
+        nErr = m_Xagyl.startCalibration();
+        if (nErr)
             return;
-        mWheelState = CALIBRATING;
+        m_nWheelState = CALIBRATING;
         enableFilterControls(uiex, false);
         enableWheelControls(uiex, false);
         uiex->setText("pushButton", "Calibrating");
     }
     // apply wheel global seetings
     else if (!strcmp(pszEvent, "on_pushButton_2_clicked")) {
-        if(Xagyl.hasPulseWidthControl()) {
+        if(m_Xagyl.hasPulseWidthControl()) {
             uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
         }
         uiex->propertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
         uiex->propertyInt("jitter", "value", filterWheelParams.jitter);
         uiex->propertyInt("positionThreshold", "value", filterWheelParams.threshold);
-        err = Xagyl.setFilterWheelParams(filterWheelParams);
-
+        nErr = m_Xagyl.setFilterWheelParams(filterWheelParams);
+        if(nErr)
+            return;
     }
     // apply filter settings.
     else if (!strcmp(pszEvent, "on_pushButton_3_clicked")) {
         filterCombBoxIndex = uiex->currentIndex("comboBox");
         uiex->propertyInt("positionOffset", "value", filterParams.offset);
-        Xagyl.setSlotParams(filterCombBoxIndex+1, filterParams.offset);
+        m_Xagyl.setSlotParams(filterCombBoxIndex+1, filterParams.offset);
     }
     // change filter
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
         filterCombBoxIndex = uiex->currentIndex("comboBox");
-        Xagyl.moveToFilterIndex(filterCombBoxIndex+1);
-        mWheelState = MOVING;
+        m_Xagyl.moveToFilterIndex(filterCombBoxIndex+1);
+        m_nWheelState = MOVING;
         enableFilterControls(uiex, false);
     }
 
     else if (!strcmp(pszEvent, "on_pushButton_4_clicked")) {
-        err = Xagyl.resetAllToDefault(resetDefaultNeedsCal);
+        nErr = m_Xagyl.resetAllToDefault(resetDefaultNeedsCal);
+        if(nErr)
+            return;
         if(resetDefaultNeedsCal) {
             printf("Resest to default is calibrating\n");
-            mResetingDefault = true;
-            mWheelState = CALIBRATING;
+            m_bResetingDefault = true;
+            m_nWheelState = CALIBRATING;
             enableFilterControls(uiex, false);
             enableWheelControls(uiex, false);
             uiex->setText("pushButton", "Calibrating");
         }
         else {
-            mWheelState = IDLE;
+            m_nWheelState = IDLE;
             updateFilterControls(uiex);
-            Xagyl.getFilterWheelParams(filterWheelParams);
-            if(Xagyl.hasPulseWidthControl()) {
+            m_Xagyl.getFilterWheelParams(filterWheelParams);
+            if(m_Xagyl.hasPulseWidthControl()) {
                 uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
             }
             uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
@@ -302,9 +305,9 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     }
 }
 
-void X2FilterWheel::enableFilterControls(X2GUIExchangeInterface* dx, bool enable) {
+void X2FilterWheel::enableFilterControls(X2GUIExchangeInterface* dx, bool bEnable) {
 
-    if(enable) {
+    if(bEnable) {
         dx->setEnabled("comboBox",true);
         dx->setEnabled("positionOffset",true);
         dx->setEnabled("pushButton_3",true);
@@ -316,12 +319,12 @@ void X2FilterWheel::enableFilterControls(X2GUIExchangeInterface* dx, bool enable
     }
 }
 
-void X2FilterWheel::enableWheelControls(X2GUIExchangeInterface* dx, bool enable)
+void X2FilterWheel::enableWheelControls(X2GUIExchangeInterface* dx, bool bEnable)
 {
-    if(enable) {
+    if(bEnable) {
         dx->setEnabled("pushButton",true);
         dx->setEnabled("pushButton_4",true);
-        if( Xagyl.hasPulseWidthControl())
+        if( m_Xagyl.hasPulseWidthControl())
             dx->setEnabled("pulseWidth",true);
         dx->setEnabled("rotationSpeed",true);
         dx->setEnabled("jitter",true);
@@ -331,7 +334,7 @@ void X2FilterWheel::enableWheelControls(X2GUIExchangeInterface* dx, bool enable)
     else {
         dx->setEnabled("pushButton",false);
         dx->setEnabled("pushButton_4",false);
-        if( Xagyl.hasPulseWidthControl())
+        if( m_Xagyl.hasPulseWidthControl())
             dx->setEnabled("pulseWidth",false);
         dx->setEnabled("rotationSpeed",false);
         dx->setEnabled("jitter",false);
@@ -342,22 +345,22 @@ void X2FilterWheel::enableWheelControls(X2GUIExchangeInterface* dx, bool enable)
 }
 void X2FilterWheel::updateFilterControls(X2GUIExchangeInterface* dx)
 {
-    int curSlot = 0;
-    filter_params   filterParams;
-    char tmpBuf[SERIAL_BUFFER_SIZE];
+    int nCurSlot = 0;
+    filter_params   FilterParams;
+    char szTmpBuf[SERIAL_BUFFER_SIZE];
 
     // what is the current filter ?
-    Xagyl.getCurrentSlot(curSlot);
-    if(curSlot == 0)
+    m_Xagyl.getCurrentSlot(nCurSlot);
+    if(nCurSlot == 0)
         return;
 
-    dx->setCurrentIndex("comboBox",curSlot-1);
+    dx->setCurrentIndex("comboBox",nCurSlot-1);
     // get filter params
-    Xagyl.getSlotParams(curSlot, filterParams);
+    m_Xagyl.getSlotParams(nCurSlot, FilterParams);
     dx->setEnabled("positionOffset",true);
-    dx->setPropertyInt("positionOffset", "value", filterParams.offset);
-    snprintf(tmpBuf,16,"Sensors %d %d", filterParams.LL, filterParams.RR);
-    dx->setPropertyString("sensorValues","text", tmpBuf);
+    dx->setPropertyInt("positionOffset", "value", FilterParams.offset);
+    snprintf(szTmpBuf,16,"Sensors %d %d", FilterParams.LL, FilterParams.RR);
+    dx->setPropertyString("sensorValues","text", szTmpBuf);
 
 }
 
@@ -365,25 +368,25 @@ void X2FilterWheel::updateFilterControls(X2GUIExchangeInterface* dx)
 
 int	X2FilterWheel::establishLink(void)
 {
-    int err;
+    int nErr;
     char szPort[DRIVER_MAX_STRING];
 
     X2MutexLocker ml(GetMutex());
     // get serial port device name
     portNameOnToCharPtr(szPort,DRIVER_MAX_STRING);
-    err = Xagyl.Connect(szPort);
-    if(err)
+    nErr = m_Xagyl.Connect(szPort);
+    if(nErr)
         m_bLinked = false;
     else
         m_bLinked = true;
 
-    return err;
+    return nErr;
 }
 
 int	X2FilterWheel::terminateLink(void)
 {
     X2MutexLocker ml(GetMutex());
-    Xagyl.Disconnect();
+    m_Xagyl.Disconnect();
     m_bLinked = false;
     return SB_OK;
 }
@@ -436,7 +439,7 @@ void X2FilterWheel::deviceInfoFirmwareVersion(BasicStringInterface& str)
     if(m_bLinked) {
         X2MutexLocker ml(GetMutex());
         char cFirmware[SERIAL_BUFFER_SIZE];
-        Xagyl.getFirmwareVersion(cFirmware, SERIAL_BUFFER_SIZE);
+        m_Xagyl.getFirmwareVersion(cFirmware, SERIAL_BUFFER_SIZE);
         str = cFirmware;
     }
     else
@@ -447,7 +450,7 @@ void X2FilterWheel::deviceInfoModel(BasicStringInterface& str)
     if(m_bLinked) {
         X2MutexLocker ml(GetMutex());
         char cModel[SERIAL_BUFFER_SIZE];
-        Xagyl.getModel(cModel, SERIAL_BUFFER_SIZE);
+        m_Xagyl.getModel(cModel, SERIAL_BUFFER_SIZE);
         str = cModel;
     }
     else
@@ -458,13 +461,13 @@ void X2FilterWheel::deviceInfoModel(BasicStringInterface& str)
 
 int	X2FilterWheel::filterCount(int& nCount)
 {
-    int err = SB_OK;
+    int nErr = SB_OK;
     X2MutexLocker ml(GetMutex());
-    err = Xagyl.getFilterCount(nCount);
-    if(err) {
-        err = ERR_CMDFAILED;
+    nErr = m_Xagyl.getFilterCount(nCount);
+    if(nErr) {
+        nErr = ERR_CMDFAILED;
     }
-    return err;
+    return nErr;
 }
 
 int	X2FilterWheel::defaultFilterName(const int& nIndex, BasicStringInterface& strFilterNameOut)
@@ -476,30 +479,30 @@ int	X2FilterWheel::defaultFilterName(const int& nIndex, BasicStringInterface& st
 
 int	X2FilterWheel::startFilterWheelMoveTo(const int& nTargetPosition)
 {
-    int err = SB_OK;
+    int nErr = SB_OK;
     
     if(m_bLinked) {
         X2MutexLocker ml(GetMutex());
         // nTargetPosition is 0 based, Xagyl wants 1 based position.
-        err = Xagyl.moveToFilterIndex(nTargetPosition+1);
-        if(err)
-            err = ERR_CMDFAILED;
+        nErr = m_Xagyl.moveToFilterIndex(nTargetPosition+1);
+        if(nErr)
+            nErr = ERR_CMDFAILED;
     }
-    return err;
+    return nErr;
 }
 
 int	X2FilterWheel::isCompleteFilterWheelMoveTo(bool& bComplete) const
 {
-    int err = SB_OK;
+    int nErr = SB_OK;
 
     if(m_bLinked) {
         X2FilterWheel* pMe = (X2FilterWheel*)this;
         X2MutexLocker ml(pMe->GetMutex());
-        err = pMe->Xagyl.isMoveToComplete(bComplete);
-        if(err)
-            err = ERR_CMDFAILED;
+        nErr = pMe->m_Xagyl.isMoveToComplete(bComplete);
+        if(nErr)
+            nErr = ERR_CMDFAILED;
     }
-    return err;
+    return nErr;
 }
 
 int	X2FilterWheel::endFilterWheelMoveTo(void)

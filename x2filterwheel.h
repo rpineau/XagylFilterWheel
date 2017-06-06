@@ -41,7 +41,7 @@ class TickCountInterface;
 #elif defined(SB_MAC_BUILD)
 #define DEF_PORT_NAME					"/dev/cu.KeySerial1"
 #elif defined(SB_LINUX_BUILD)
-#define DEF_PORT_NAME					"/dev/COM0"
+#define DEF_PORT_NAME					"/dev/ttyUSB0"
 #endif
 
 #define LOG_BUFFER_SIZE 256
@@ -172,11 +172,11 @@ private:
 	MutexInterface*						m_pIOMutex;
 	TickCountInterface*					m_pTickCount;
 
-    CXagyl                              Xagyl;
+    CXagyl                              m_Xagyl;
     bool                                m_bLinked;
-    int                                 mWheelState; // use in the Settings dialog only.
-    bool                                mUiEnabled;
-    bool                                mResetingDefault;
+    int                                 m_nWheelState; // use in the Settings dialog only.
+    bool                                m_bUiEnabled;
+    bool                                m_bResetingDefault;
     
 
 };

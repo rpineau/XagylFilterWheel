@@ -55,10 +55,10 @@ public:
 
     int             Connect(const char *szPort);
     void            Disconnect(void);
-    bool            IsConnected(void) { return bIsConnected; }
+    bool            IsConnected(void) { return m_bIsConnected; };
 
-    void            SetSerxPointer(SerXInterface *p) { pSerx = p; }
-    void            setLogger(LoggerInterface *pLogger) { mLogger = pLogger; };
+    void            SetSerxPointer(SerXInterface *p) { m_pSerx = p; };
+    void            setLogger(LoggerInterface *pLogger) { m_pLogger = pLogger; };
 
     // filter wheel communication
     int             filterWheelCommand(const char *cmd, char *result, int resultMaxLen);
@@ -89,30 +89,30 @@ public:
     bool            hasPulseWidthControl();
 
 protected:
-    SerXInterface   *pSerx;
-    LoggerInterface *mLogger;
+    SerXInterface   *m_pSerx;
+    LoggerInterface *m_pLogger;
 
-    bool            bIsConnected;
-    bool            bDebugLog;
+    bool            m_bIsConnected;
+    bool            m_bDebugLog;
 
-    char            mfirmwareVersion[SERIAL_BUFFER_SIZE];
-    float           mFloatFirmwareVersion;
+    char            m_szFirmwareVersion[SERIAL_BUFFER_SIZE];
+    float           m_fFirmwareVersion;
 
-    char            mLogBuffer[LOG_BUFFER_SIZE];
+    char            m_szLogBuffer[LOG_BUFFER_SIZE];
 
-    bool            bCalibrating;
-    bool            mHasPulseWidthControl;
-    int             mCurentFilterSlot;
-    int             mTargetFilterSlot;
+    bool            m_bCalibrating;
+    bool            m_bHasPulseWidthControl;
+    int             m_nCurentFilterSlot;
+    int             m_nTargetFilterSlot;
     
-    int             mNbSlot;
-    time_t          mStartMoveTime;
-    wheel_params    mWheelParams;
+    int             m_nNbSlot;
+    time_t          m_tStartMoveTime;
+    wheel_params    m_WheelParams;
 
-    int             getNumbersOfSlotsFromDevice(int &nbSlots);
-    void            convertFirmwareToFloat(char *mfirmwareVersion);
+    int             getNumbersOfSlotsFromDevice(int &nNbSlots);
+    void            convertFirmwareToFloat(char *m_szFirmwareVersion);
 
-    void            hexdump(unsigned char* inputData, unsigned char *outBuffer, int size);
+    void            hexdump(unsigned char* szInputData, unsigned char *szOutBuffer, int nSize);
 
 };
 #endif /* xagyl_h */
