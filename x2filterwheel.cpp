@@ -110,7 +110,7 @@ int X2FilterWheel::execModalSettingsDialog()
 
         if( m_Xagyl.hasPulseWidthControl()){
             dx->setEnabled("label_3",true);
-            dx->setPropertyInt("pulseWidth", "value", FilterWheelParams.pulseWidth);
+            dx->setPropertyInt("pulseWidth", "value", FilterWheelParams.nPulseWidth);
         }
         else{
             dx->setEnabled("label_3",false);
@@ -119,9 +119,9 @@ int X2FilterWheel::execModalSettingsDialog()
 
         enableWheelControls(dx, true);
         
-        dx->setPropertyInt("rotationSpeed", "value", FilterWheelParams.rotationSpeed);
-        dx->setPropertyInt("jitter", "value", FilterWheelParams.jitter);
-        dx->setPropertyInt("positionThreshold", "value", FilterWheelParams.threshold);
+        dx->setPropertyInt("rotationSpeed", "value", FilterWheelParams.nRotationSpeed);
+        dx->setPropertyInt("jitter", "value", FilterWheelParams.nJitter);
+        dx->setPropertyInt("positionThreshold", "value", FilterWheelParams.nThreshold);
 
         enableFilterControls(dx, true);
 
@@ -228,11 +228,11 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
                 if(m_bResetingDefault) {
                     m_Xagyl.getFilterWheelParams(filterWheelParams);
                     if(m_Xagyl.hasPulseWidthControl()) {
-                        uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+                        uiex->propertyInt("pulseWidth", "value", filterWheelParams.nPulseWidth);
                     }
-                    uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
-                    uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
-                    uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
+                    uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.nRotationSpeed);
+                    uiex->setPropertyInt("jitter", "value", filterWheelParams.nJitter);
+                    uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.nThreshold);
                     m_bResetingDefault = false;
                 }
             }
@@ -256,11 +256,11 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     // apply wheel global seetings
     else if (!strcmp(pszEvent, "on_pushButton_2_clicked")) {
         if(m_Xagyl.hasPulseWidthControl()) {
-            uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+            uiex->propertyInt("pulseWidth", "value", filterWheelParams.nPulseWidth);
         }
-        uiex->propertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
-        uiex->propertyInt("jitter", "value", filterWheelParams.jitter);
-        uiex->propertyInt("positionThreshold", "value", filterWheelParams.threshold);
+        uiex->propertyInt("rotationSpeed", "value", filterWheelParams.nRotationSpeed);
+        uiex->propertyInt("jitter", "value", filterWheelParams.nJitter);
+        uiex->propertyInt("positionThreshold", "value", filterWheelParams.nThreshold);
         nErr = m_Xagyl.setFilterWheelParams(filterWheelParams);
         if(nErr)
             return;
@@ -268,8 +268,8 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
     // apply filter settings.
     else if (!strcmp(pszEvent, "on_pushButton_3_clicked")) {
         filterCombBoxIndex = uiex->currentIndex("comboBox");
-        uiex->propertyInt("positionOffset", "value", filterParams.offset);
-        m_Xagyl.setSlotParams(filterCombBoxIndex+1, filterParams.offset);
+        uiex->propertyInt("positionOffset", "value", filterParams.nOffset);
+        m_Xagyl.setSlotParams(filterCombBoxIndex+1, filterParams.nOffset);
     }
     // change filter
     else if (!strcmp(pszEvent, "on_comboBox_currentIndexChanged")) {
@@ -296,11 +296,11 @@ void X2FilterWheel::uiEvent(X2GUIExchangeInterface* uiex, const char* pszEvent)
             updateFilterControls(uiex);
             m_Xagyl.getFilterWheelParams(filterWheelParams);
             if(m_Xagyl.hasPulseWidthControl()) {
-                uiex->propertyInt("pulseWidth", "value", filterWheelParams.pulseWidth);
+                uiex->propertyInt("pulseWidth", "value", filterWheelParams.nPulseWidth);
             }
-            uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.rotationSpeed);
-            uiex->setPropertyInt("jitter", "value", filterWheelParams.jitter);
-            uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.threshold);
+            uiex->setPropertyInt("rotationSpeed", "value", filterWheelParams.nRotationSpeed);
+            uiex->setPropertyInt("jitter", "value", filterWheelParams.nJitter);
+            uiex->setPropertyInt("positionThreshold", "value", filterWheelParams.nThreshold);
         }
     }
 }
@@ -358,8 +358,8 @@ void X2FilterWheel::updateFilterControls(X2GUIExchangeInterface* dx)
     // get filter params
     m_Xagyl.getSlotParams(nCurSlot, FilterParams);
     dx->setEnabled("positionOffset",true);
-    dx->setPropertyInt("positionOffset", "value", FilterParams.offset);
-    snprintf(szTmpBuf,16,"Sensors %d %d", FilterParams.LL, FilterParams.RR);
+    dx->setPropertyInt("positionOffset", "value", FilterParams.nOffset);
+    snprintf(szTmpBuf,16,"Sensors %d %d", FilterParams.nLL, FilterParams.nRR);
     dx->setPropertyString("sensorValues","text", szTmpBuf);
 
 }

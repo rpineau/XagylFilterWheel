@@ -35,16 +35,16 @@ enum XagylFilterWheelErrors { XA_OK=0, XA_NOT_CONNECTED, XA_CANT_CONNECT, XA_BAD
 
 
 typedef struct {
-    int offset;
-    int LL;
-    int RR;
+    int nOffset;
+    int nLL;
+    int nRR;
 } filter_params;
 
 typedef struct {
-    int pulseWidth;
-    int jitter;
-    int rotationSpeed;
-    int threshold;
+    int nPulseWidth;
+    int nJitter;
+    int nRotationSpeed;
+    int nThreshold;
 } wheel_params;
 
 class CXagyl
