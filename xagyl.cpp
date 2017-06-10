@@ -151,8 +151,10 @@ int CXagyl::readResponse(char *szRespBuffer, int nBufferLen)
         }
     } while (*szBufPtr++ != 0xA && ulTotalBytesRead < (unsigned long)nBufferLen );
 
-    *(szBufPtr-2) = 0; //remove the 0xD
-    *(szBufPtr-1) = 0; //remove the 0xA
+    if(ulTotalBytesRead) {
+        *(szBufPtr-2) = 0; //remove the 0xD
+        *(szBufPtr-1) = 0; //remove the 0xA
+    }
     return nErr;
 }
 
