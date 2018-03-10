@@ -43,9 +43,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 ; WIll also need to customise these!
 Source: "filterwheellist xagyl.txt"; DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion
-Source: "libXagylFilterWheel\Release\libXagylFilterWheel.dll"; DestDir: "{app}\Plugins\FocuserPlugins"; Flags: ignoreversion
-Source: "XagylFilterWheel.ui"; DestDir: "{app}\Plugins\FocuserPlugins"; Flags: ignoreversion
-Source: "Xagyl.png"; DestDir: "{app}\Plugins\FocuserPlugins"; Flags: ignoreversion
+Source: "libXagylFilterWheel\Release\libXagylFilterWheel.dll"; DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
+Source: "XagylFilterWheel.ui"; DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
+Source: "Xagyl.png"; DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 ; msgBox('Do you want to install MyProg.exe to ' + ExtractFilePath(CurrentFileName) + '?', mbConfirmation, MB_YESNO)
 
