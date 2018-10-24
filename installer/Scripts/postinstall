@@ -31,8 +31,6 @@ fi
 
 echo "Installing in $TheSkyX_Path/Resources/Common/$PLUGINS_DIR/FilterWheelPlugIns/"
 
-mkdir -p "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/FilterWheelPlugIns/"
-
 cp "/tmp/XagylFilterWheel_X2/filterwheellist xagyl.txt" "$TheSkyX_Path/Resources/Common/Miscellaneous Files/"
 if [ "$?" -ne "0" ]; then exit 1; fi
 cp "/tmp/XagylFilterWheel_X2/XagylFilterWheel.ui" "$TheSkyX_Path/Resources/Common/$PLUGINS_DIR/FilterWheelPlugIns/"
