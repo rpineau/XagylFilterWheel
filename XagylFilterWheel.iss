@@ -40,14 +40,23 @@ DirExistsWarning=no
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Dirs]
+Name: "{app}\Plugins\FilterWheelPlugIns";
+Name: "{app}\Plugins64\FilterWheelPlugIns";
+
 [Files]
 ; WIll also need to customise these!
-Source: "filterwheellist xagyl.txt"; DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion
-Source: "libXagylFilterWheel\Release\libXagylFilterWheel.dll"; DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
-Source: "XagylFilterWheel.ui"; DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
-Source: "Xagyl.png"; DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-; msgBox('Do you want to install MyProg.exe to ' + ExtractFilePath(CurrentFileName) + '?', mbConfirmation, MB_YESNO)
+Source: "filterwheellist xagyl.txt";                                    DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion
+Source: "filterwheellist xagyl.txt";                                    DestDir: "{app}\Miscellaneous Files"; Flags: ignoreversion; DestName: "filterwheellist64 xagyl.txt";
+; 32 bits
+Source: "libXagylFilterWheel\Win32\Release\libXagylFilterWheel.dll";    DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
+Source: "XagylFilterWheel.ui";                                          DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
+Source: "Xagyl.png";                                                    DestDir: "{app}\Plugins\FilterWheelPlugIns"; Flags: ignoreversion
+; 64 bits
+Source: "libXagylFilterWheel\x64\Release\libXagylFilterWheel.dll";      DestDir: "{app}\Plugins64\FilterWheelPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\FilterWheelPlugIns'))
+Source: "XagylFilterWheel.ui";                                          DestDir: "{app}\Plugins64\FilterWheelPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\FilterWheelPlugIns'))
+Source: "Xagyl.png";                                                    DestDir: "{app}\Plugins64\FilterWheelPlugIns"; Flags: ignoreversion; Check: DirExists(ExpandConstant('{app}\Plugins64\FilterWheelPlugIns'))
+
 
 [Code]
 {* Below is a function to read TheSkyXInstallPath.txt and confirm that the directory does exist
